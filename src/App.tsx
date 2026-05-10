@@ -4,11 +4,13 @@ import { TypingStage } from "./components/typing/TypingStage.tsx";
 import { DictPanel } from "./components/dict/DictPanel.tsx";
 import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
+import { SettingsModal } from "./components/settings/SettingsModal.tsx";
 import { useKeyboard } from "./hooks/useKeyboard.ts";
 import { useTimer } from "./hooks/useTimer.ts";
 import { useDict } from "./hooks/useDict.ts";
 import { useTypingStore } from "./store/typingStore.ts";
 import { useArticleStore } from "./store/articleStore.ts";
+import { useSettingsStore } from "./store/settingsStore.ts";
 
 export function App() {
   const currentArticle = useArticleStore((s) => s.currentArticle);
@@ -16,6 +18,8 @@ export function App() {
   const openManager = useArticleStore((s) => s.openManager);
   const closeManager = useArticleStore((s) => s.closeManager);
   const loadFromStorage = useArticleStore((s) => s.loadFromStorage);
+  const settingsOpen = useSettingsStore((s) => s.settingsOpen);
+  const closeSettings = useSettingsStore((s) => s.closeSettings);
   const { entry, loading, error, lookup, clear } = useDict();
   const loadedRef = useRef<string | null>(null);
 
@@ -45,6 +49,10 @@ export function App() {
         closeManager();
         return;
       }
+      if (e.key === "Escape" && settingsOpen) {
+        closeSettings();
+        return;
+      }
       if (e.ctrlKey && e.key === "d") {
         e.preventDefault();
         const selection = window.getSelection()?.toString().trim();
@@ -53,7 +61,7 @@ export function App() {
     }
     window.addEventListener("keydown", handleGlobal);
     return () => window.removeEventListener("keydown", handleGlobal);
-  }, [lookup, managerOpen, openManager, closeManager]);
+  }, [lookup, managerOpen, openManager, closeManager, settingsOpen, closeSettings]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--theme-bg)" }}>
@@ -64,6 +72,7 @@ export function App() {
       <DictPanel entry={entry} loading={loading} error={error} onClose={clear} />
       <ShortcutsBar />
       {managerOpen && <ArticleManager />}
+      {settingsOpen && <SettingsModal />}
     </div>
   );
 }

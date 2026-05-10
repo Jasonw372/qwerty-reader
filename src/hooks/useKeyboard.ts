@@ -10,10 +10,11 @@ export function useKeyboard(): void {
   const isFinished = useTypingStore((s) => s.isFinished);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const managerOpen = useArticleStore((s) => s.managerOpen);
+  const settingsOpen = useSettingsStore((s) => s.settingsOpen);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
-      if (managerOpen) return;
+      if (managerOpen || settingsOpen) return;
       if (isFinished) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
 
@@ -40,7 +41,7 @@ export function useKeyboard(): void {
     }
 
     function handleKeyUp(e: KeyboardEvent): void {
-      if (managerOpen) return;
+      if (managerOpen || settingsOpen) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key.length !== 1) return;
       if (soundEnabled) playKeyup();
@@ -52,5 +53,5 @@ export function useKeyboard(): void {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [typeChar, reset, isFinished, soundEnabled, managerOpen]);
+  }, [typeChar, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
 }

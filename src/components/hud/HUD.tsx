@@ -11,10 +11,7 @@ export function HUD() {
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
   const article = useArticleStore((s) => s.currentArticle);
   const openManager = useArticleStore((s) => s.openManager);
-  const theme = useSettingsStore((s) => s.theme);
-  const setTheme = useSettingsStore((s) => s.setTheme);
-  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
-  const toggleSound = useSettingsStore((s) => s.toggleSound);
+  const openSettings = useSettingsStore((s) => s.openSettings);
 
   const progress =
     paragraphs.length > 0 ? Math.round((activeParagraphIndex / paragraphs.length) * 100) : 0;
@@ -27,7 +24,7 @@ export function HUD() {
       <div className="flex items-center gap-4 text-[var(--theme-text-pending)]">
         <button
           onClick={openManager}
-          title="管理文章"
+          title="管理文章 (Tab)"
           className="max-w-xs truncate px-2 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent text-xs cursor-pointer"
         >
           {article?.title ?? "—"}
@@ -45,21 +42,11 @@ export function HUD() {
         <span className="text-[var(--theme-text-correct)]">{formatTime(elapsed)}</span>
 
         <button
-          onClick={() => setTheme(theme === "dark" ? "parchment" : "dark")}
-          title={theme === "dark" ? "切换到羊皮纸模式" : "切换到暗黑模式"}
+          onClick={openSettings}
+          title="设置"
           className="px-2 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent text-xs cursor-pointer"
         >
-          {theme === "dark" ? "☀ light" : "☾ dark"}
-        </button>
-
-        <button
-          onClick={toggleSound}
-          title={soundEnabled ? "关闭音效" : "开启音效"}
-          className={`px-2 py-0.5 rounded border border-[var(--theme-border)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent text-xs cursor-pointer ${
-            soundEnabled ? "text-[var(--theme-text-correct)]" : "text-[var(--theme-text-pending)]"
-          }`}
-        >
-          {soundEnabled ? "♪ on" : "♪ off"}
+          ⚙ settings
         </button>
       </div>
     </header>

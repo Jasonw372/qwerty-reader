@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useTypingStore } from "../../store/typingStore.ts";
+import { useSettingsStore } from "../../store/settingsStore.ts";
 import { CharSpan } from "./CharSpan.tsx";
 
 export function TypingStage() {
   const paragraphs = useTypingStore((s) => s.paragraphs);
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
+  const fontSize = useSettingsStore((s) => s.fontSize);
   const activeRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function TypingStage() {
             ref={paraIndex === activeParagraphIndex ? activeRef : null}
             className="font-mono mb-16 leading-loose transition-all duration-500"
             style={{
-              fontSize: "1.875rem",
+              fontSize: `${fontSize}px`,
               letterSpacing: "0.02em",
               opacity,
               filter: `blur(${blur}px)`,

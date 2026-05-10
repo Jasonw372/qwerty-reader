@@ -4,6 +4,8 @@ export type ParagraphFocus = "active" | "done" | "upcoming";
 
 export type Theme = "dark" | "parchment";
 
+export type CursorStyle = "line" | "block" | "underline";
+
 export interface CharState {
   char: string;
   status: CharStatus;
