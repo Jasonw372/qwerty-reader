@@ -1,7 +1,7 @@
 const SHORTCUTS = [
   { key: "Esc", label: "重练" },
   { key: "Ctrl+D", label: "字典" },
-  { key: "Tab", label: "换篇" },
+  { key: "Tab", label: "文章" },
 ];
 
 export function ShortcutsBar() {

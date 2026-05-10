@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTypingStore } from "../store/typingStore.ts";
 import { useSettingsStore } from "../store/settingsStore.ts";
+import { useArticleStore } from "../store/articleStore.ts";
 import { playCorrect, playIncorrect, playKeyup, resumeAudio } from "../lib/audio.ts";
 
 export function useKeyboard(): void {
@@ -8,9 +9,11 @@ export function useKeyboard(): void {
   const reset = useTypingStore((s) => s.reset);
   const isFinished = useTypingStore((s) => s.isFinished);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const managerOpen = useArticleStore((s) => s.managerOpen);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
+      if (managerOpen) return;
       if (isFinished) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
 
@@ -37,6 +40,7 @@ export function useKeyboard(): void {
     }
 
     function handleKeyUp(e: KeyboardEvent): void {
+      if (managerOpen) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key.length !== 1) return;
       if (soundEnabled) playKeyup();
@@ -48,5 +52,5 @@ export function useKeyboard(): void {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [typeChar, reset, isFinished, soundEnabled]);
+  }, [typeChar, reset, isFinished, soundEnabled, managerOpen]);
 }
