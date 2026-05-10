@@ -1,17 +1,19 @@
 import { useEffect } from "react";
 import { useTypingStore } from "../store/typingStore.ts";
+import { useSettingsStore } from "../store/settingsStore.ts";
+import { playCorrect, playIncorrect, playKeyup, resumeAudio } from "../lib/audio.ts";
 
 export function useKeyboard(): void {
   const typeChar = useTypingStore((s) => s.typeChar);
   const reset = useTypingStore((s) => s.reset);
   const isFinished = useTypingStore((s) => s.isFinished);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (isFinished) return;
-
-      // Ignore modifier-only keys and function keys
       if (e.ctrlKey || e.altKey || e.metaKey) return;
+
       if (e.key === "Escape") {
         reset();
         return;
@@ -19,10 +21,32 @@ export function useKeyboard(): void {
       if (e.key.length !== 1) return;
 
       e.preventDefault();
+      resumeAudio();
+
+      const { paragraphs, activeParagraphIndex, cursor } = useTypingStore.getState();
+      const para = paragraphs[activeParagraphIndex];
+      const expected = para?.chars[cursor]?.char;
+      const correct = expected === e.key;
+
+      if (soundEnabled) {
+        if (correct) playCorrect(e.key === " ");
+        else playIncorrect();
+      }
+
       typeChar(e.key);
     }
 
+    function handleKeyUp(e: KeyboardEvent): void {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length !== 1) return;
+      if (soundEnabled) playKeyup();
+    }
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [typeChar, reset, isFinished]);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [typeChar, reset, isFinished, soundEnabled]);
 }

@@ -12,6 +12,8 @@ export function HUD() {
   const article = useArticleStore((s) => s.currentArticle);
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const toggleSound = useSettingsStore((s) => s.toggleSound);
 
   const progress =
     paragraphs.length > 0 ? Math.round((activeParagraphIndex / paragraphs.length) * 100) : 0;
@@ -64,6 +66,24 @@ export function HUD() {
           }}
         >
           {theme === "dark" ? "☀ light" : "☾ dark"}
+        </button>
+
+        <button
+          onClick={toggleSound}
+          title={soundEnabled ? "关闭音效" : "开启音效"}
+          style={{
+            background: "none",
+            border: "1px solid var(--theme-border)",
+            borderRadius: "6px",
+            padding: "2px 8px",
+            cursor: "pointer",
+            color: soundEnabled ? "var(--theme-text-correct)" : "var(--theme-text-pending)",
+            fontSize: "0.75rem",
+            fontFamily: "inherit",
+            transition: "color 0.2s, border-color 0.2s",
+          }}
+        >
+          {soundEnabled ? "♪ on" : "♪ off"}
         </button>
       </div>
     </header>
