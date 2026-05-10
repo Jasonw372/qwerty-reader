@@ -87,7 +87,7 @@ export function SettingsModal() {
             />
             <div className="flex justify-between text-xs text-[var(--theme-text-muted)]">
               <span>14px</span>
-              <span>50px</span>
+              <span>40px</span>
             </div>
           </div>
 
