@@ -29,7 +29,7 @@ export function useDict(): UseDictReturn {
         `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`,
       );
       if (!res.ok) {
-        setError("Word not found");
+        setError("dict.wordNotFound");
         setEntry(null);
         return;
       }
@@ -51,7 +51,7 @@ export function useDict(): UseDictReturn {
         })),
       });
     } catch {
-      setError("Network error");
+      setError("dict.networkError");
       setEntry(null);
     } finally {
       setLoading(false);

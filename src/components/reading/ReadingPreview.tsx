@@ -1,4 +1,5 @@
 import type { Article } from "../../types/index.ts";
+import { useTranslation } from "react-i18next";
 
 interface ReadingPreviewProps {
   article: Article;
@@ -20,6 +21,7 @@ export function ReadingPreview({
   onStartReading,
   onStartTyping,
 }: ReadingPreviewProps) {
+  const { t } = useTranslation();
   const paragraphs = splitParagraphs(article.content);
   const chars = article.content.trim().length;
 
@@ -28,7 +30,7 @@ export function ReadingPreview({
       <section className="animate-float-in mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-5xl flex-col justify-center px-5 py-16 text-[var(--theme-text-correct)] md:px-8">
         <div className="glass-panel rounded-3xl px-6 py-8 md:px-10 md:py-10">
           <p className="mb-3 text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">
-            阅读预览
+            {t("reading.preview")}
           </p>
           <h1 className="max-w-3xl text-4xl font-medium leading-tight md:text-6xl">
             {article.title}
@@ -38,16 +40,18 @@ export function ReadingPreview({
               <span className="soft-button rounded-full px-3 py-1">{article.source}</span>
             )}
             <span className="soft-button rounded-full px-3 py-1">
-              {paragraphs.length} paragraphs
+              {t("reading.paragraphs", { count: paragraphs.length })}
             </span>
-            <span className="soft-button rounded-full px-3 py-1">{chars} chars</span>
+            <span className="soft-button rounded-full px-3 py-1">
+              {t("reading.chars", { count: chars })}
+            </span>
           </div>
           <button
             type="button"
             onClick={onStartReading}
             className="primary-button mt-10 w-fit rounded-xl px-6 py-3 text-sm cursor-pointer"
           >
-            开始阅读
+            {t("reading.startReading")}
           </button>
         </div>
       </section>
@@ -60,7 +64,7 @@ export function ReadingPreview({
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">
-              通读文章
+              {t("reading.readArticle")}
             </p>
             <h1 className="mt-2 text-3xl font-medium leading-tight md:text-4xl">{article.title}</h1>
           </div>
@@ -69,7 +73,7 @@ export function ReadingPreview({
             onClick={onStartTyping}
             className="primary-button w-fit rounded-xl px-5 py-2.5 text-sm cursor-pointer"
           >
-            开始打字
+            {t("reading.startTyping")}
           </button>
         </div>
       </header>

@@ -6,6 +6,8 @@ export type Theme = "dark" | "parchment" | "auto";
 
 export type CursorStyle = "line" | "block" | "underline";
 
+export type Locale = "zh-CN" | "en-US";
+
 export interface CharState {
   char: string;
   status: CharStatus;

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { formatTime } from "../../lib/textParser.ts";
 import { useTypingStore } from "../../store/typingStore.ts";
 import type { Keystroke } from "../../types/index.ts";
+import { useTranslation } from "react-i18next";
 
 interface ErrorItem {
   label: string;
@@ -72,6 +73,13 @@ function buildParagraphPoints(keystrokes: Keystroke[], paragraphCount: number): 
   });
 }
 
+function localizeKeyLabel(label: string, t: (key: string) => string): string {
+  if (label === "Space") return t("summary.keySpace");
+  if (label === "Enter") return t("summary.keyEnter");
+  if (label === "Tab") return t("summary.keyTab");
+  return label;
+}
+
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="hairline-panel rounded-2xl px-5 py-4">
@@ -84,6 +92,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 }
 
 export function FinishSummary() {
+  const { t } = useTranslation();
   const isFinished = useTypingStore((s) => s.isFinished);
   const wpm = useTypingStore((s) => s.wpm);
   const accuracy = useTypingStore((s) => s.accuracy);
@@ -121,30 +130,36 @@ export function FinishSummary() {
     <section className="animate-float-in mx-auto w-full max-w-6xl px-5 pb-24 pt-16 text-[var(--theme-text-correct)] md:px-8 md:pt-20">
       <div className="mb-8 flex flex-col gap-4 border-b border-[var(--theme-border)] pb-7 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">练习完成</p>
-          <h1 className="mt-3 text-4xl font-medium tracking-normal md:text-5xl">本篇总结</h1>
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">
+            {t("summary.practiceComplete")}
+          </p>
+          <h1 className="mt-3 text-4xl font-medium tracking-normal md:text-5xl">
+            {t("summary.title")}
+          </h1>
         </div>
         <button
           type="button"
           onClick={reset}
           className="primary-button w-fit rounded-xl px-5 py-2.5 text-sm cursor-pointer"
         >
-          一键重练
+          {t("summary.retry")}
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="最终 WPM" value={wpm} />
-        <Metric label="准确率" value={`${accuracy}%`} />
-        <Metric label="总用时" value={formatTime(elapsed)} />
+        <Metric label={t("summary.finalWpm")} value={wpm} />
+        <Metric label={t("summary.accuracy")} value={`${accuracy}%`} />
+        <Metric label={t("summary.totalTime")} value={formatTime(elapsed)} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
         <div className="glass-panel rounded-2xl p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-medium">错误热力图</h2>
+            <h2 className="text-base font-medium">{t("summary.errorHeatmap")}</h2>
             <span className="text-xs text-[var(--theme-text-pending)]">
-              {keystrokes.filter((k) => k.action === "type" && !k.correct).length} errors
+              {t("summary.errors", {
+                count: keystrokes.filter((k) => k.action === "type" && !k.correct).length,
+              })}
             </span>
           </div>
 
@@ -162,34 +177,36 @@ export function FinishSummary() {
                     style={{
                       backgroundColor: `rgba(247, 118, 142, ${intensity})`,
                     }}
-                    title={`${item.label}: ${item.count}/${item.total}`}
+                    title={`${localizeKeyLabel(item.label, t)}: ${item.count}/${item.total}`}
                   >
-                    <div className="text-lg">{item.label}</div>
+                    <div className="text-lg">{localizeKeyLabel(item.label, t)}</div>
                     <div className="text-xs text-[var(--theme-text-pending)]">{item.count}</div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-sm text-[var(--theme-text-pending)]">没有错误，保持得很稳。</p>
+            <p className="text-sm text-[var(--theme-text-pending)]">{t("summary.noErrors")}</p>
           )}
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <ErrorRank title="易错字符" items={summary.expectedErrors} />
-            <ErrorRank title="误按键位" items={summary.inputErrors} />
+            <ErrorRank title={t("summary.expectedErrors")} items={summary.expectedErrors} />
+            <ErrorRank title={t("summary.inputErrors")} items={summary.inputErrors} />
           </div>
         </div>
 
         <div className="glass-panel rounded-2xl p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-medium">段落速度曲线</h2>
-            <span className="text-xs text-[var(--theme-text-pending)]">WPM / paragraph</span>
+            <h2 className="text-base font-medium">{t("summary.paragraphTrend")}</h2>
+            <span className="text-xs text-[var(--theme-text-pending)]">
+              {t("summary.wpmPerParagraph")}
+            </span>
           </div>
 
           <svg
             viewBox={`0 0 ${width} ${height}`}
             role="img"
-            aria-label="每段落的速度曲线"
+            aria-label={t("summary.paragraphTrendAria")}
             className="h-40 w-full overflow-visible"
           >
             <line
@@ -251,6 +268,8 @@ export function FinishSummary() {
 }
 
 function ErrorRank({ title, items }: { title: string; items: ErrorItem[] }) {
+  const { t } = useTranslation();
+
   return (
     <div>
       <h3 className="mb-2 text-xs uppercase tracking-wider text-[var(--theme-text-pending)]">
@@ -263,13 +282,15 @@ function ErrorRank({ title, items }: { title: string; items: ErrorItem[] }) {
               key={item.label}
               className="flex items-center justify-between gap-3 rounded-lg border border-[var(--theme-border)] px-3 py-2"
             >
-              <span className="truncate text-[var(--theme-text-correct)]">{item.label}</span>
+              <span className="truncate text-[var(--theme-text-correct)]">
+                {localizeKeyLabel(item.label, t)}
+              </span>
               <span className="text-[var(--theme-text-error)]">{item.count}</span>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="text-sm text-[var(--theme-text-pending)]">无</p>
+        <p className="text-sm text-[var(--theme-text-pending)]">{t("summary.none")}</p>
       )}
     </div>
   );

@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 import { useArticleStore } from "../../store/articleStore.ts";
 import type { Article } from "../../types/index.ts";
+import { useTranslation } from "react-i18next";
 
 type Tab = "list" | "upload" | "input";
 
 export function ArticleManager() {
+  const { t } = useTranslation();
   const articles = useArticleStore((s) => s.articles);
   const currentArticle = useArticleStore((s) => s.currentArticle);
   const setCurrentArticle = useArticleStore((s) => s.setCurrentArticle);
@@ -47,11 +49,11 @@ export function ArticleManager() {
 
   function handleUploadSubmit() {
     if (!uploadTitle.trim()) {
-      setUploadError("请输入标题");
+      setUploadError(t("articleManager.errorTitleRequired"));
       return;
     }
     if (!uploadContent.trim()) {
-      setUploadError("请先选择文件");
+      setUploadError(t("articleManager.errorSelectFile"));
       return;
     }
     const article: Article = {
@@ -70,11 +72,11 @@ export function ArticleManager() {
 
   function handleInputSubmit() {
     if (!title.trim()) {
-      setInputError("请输入标题");
+      setInputError(t("articleManager.errorTitleRequired"));
       return;
     }
     if (!content.trim()) {
-      setInputError("请输入内容");
+      setInputError(t("articleManager.errorContentRequired"));
       return;
     }
     const article: Article = {
@@ -92,9 +94,9 @@ export function ArticleManager() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "list", label: "文章列表" },
-    { key: "upload", label: "上传文件" },
-    { key: "input", label: "手动输入" },
+    { key: "list", label: t("articleManager.tabList") },
+    { key: "upload", label: t("articleManager.tabUpload") },
+    { key: "input", label: t("articleManager.tabInput") },
   ];
 
   return (
@@ -106,12 +108,13 @@ export function ArticleManager() {
         className="glass-panel relative flex max-h-[82vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl font-mono"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
           <div>
-            <span className="text-base font-medium text-[var(--theme-text-correct)]">文章管理</span>
+            <span className="text-base font-medium text-[var(--theme-text-correct)]">
+              {t("articleManager.title")}
+            </span>
             <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
-              {articles.length} 篇可用文章
+              {t("articleManager.availableArticles", { count: articles.length })}
             </p>
           </div>
           <button
@@ -122,7 +125,6 @@ export function ArticleManager() {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 px-6 pt-5 text-xs">
           {tabs.map(({ key, label }) => (
             <button
@@ -139,7 +141,6 @@ export function ArticleManager() {
           ))}
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "list" && (
             <ul className="flex flex-col gap-2">
@@ -174,7 +175,7 @@ export function ArticleManager() {
                       onClick={(e) => handleRemove(e, a.id)}
                       className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
                     >
-                      删除
+                      {t("articleManager.delete")}
                     </button>
                   )}
                 </li>
@@ -202,15 +203,15 @@ export function ArticleManager() {
                   htmlFor="file-upload"
                   className="soft-button shrink-0 rounded-xl px-4 py-2 text-sm cursor-pointer"
                 >
-                  选择文件
+                  {t("articleManager.chooseFile")}
                 </label>
                 <span className="text-xs text-[var(--theme-text-muted)] truncate">
-                  {uploadContent ? "已加载文件内容" : "支持 .txt 纯文本文件"}
+                  {uploadContent ? t("articleManager.fileLoaded") : t("articleManager.fileHint")}
                 </span>
               </div>
               <input
                 type="text"
-                placeholder="文章标题（选择文件后自动填入，可修改）"
+                placeholder={t("articleManager.uploadTitlePlaceholder")}
                 value={uploadTitle}
                 onChange={(e) => {
                   setUploadTitle(e.target.value);
@@ -223,7 +224,7 @@ export function ArticleManager() {
                 disabled={!uploadContent}
                 className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
               >
-                添加文章
+                {t("articleManager.addArticle")}
               </button>
             </div>
           )}
@@ -237,7 +238,7 @@ export function ArticleManager() {
               )}
               <input
                 type="text"
-                placeholder="文章标题"
+                placeholder={t("articleManager.inputTitlePlaceholder")}
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -246,7 +247,7 @@ export function ArticleManager() {
                 className="field w-full rounded-xl px-3 py-2 text-sm outline-none"
               />
               <textarea
-                placeholder="粘贴或输入文章内容..."
+                placeholder={t("articleManager.inputContentPlaceholder")}
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value);
@@ -259,7 +260,7 @@ export function ArticleManager() {
                 onClick={handleInputSubmit}
                 className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer"
               >
-                添加文章
+                {t("articleManager.addArticle")}
               </button>
             </div>
           )}

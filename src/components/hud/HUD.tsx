@@ -3,12 +3,14 @@ import { useArticleStore } from "../../store/articleStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
 import { Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface HUDProps {
   onOpenReading?: () => void;
 }
 
 export function HUD({ onOpenReading }: HUDProps) {
+  const { t } = useTranslation();
   const wpm = useTypingStore((s) => s.wpm);
   const accuracy = useTypingStore((s) => s.accuracy);
   const elapsed = useTypingStore((s) => s.elapsed);
@@ -35,18 +37,18 @@ export function HUD({ onOpenReading }: HUDProps) {
         <div className="flex min-w-0 items-center gap-3 text-[var(--theme-text-pending)]">
           <button
             onClick={openManager}
-            title="管理文章 (Tab)"
+            title={t("hud.manageArticles")}
             className="soft-button min-w-0 max-w-[min(22rem,62vw)] truncate rounded-lg px-3 py-2 text-left text-xs cursor-pointer"
           >
             <span className="mr-2 text-[var(--theme-accent)]">▸</span>
             <span className="text-[var(--theme-text-correct)]">
-              {article?.title ?? "未选择文章"}
+              {article?.title ?? t("hud.noArticle")}
             </span>
           </button>
           <div className="hidden h-8 w-px bg-[var(--theme-border)] md:block" />
           <div className="flex min-w-28 flex-col gap-1">
             <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-[var(--theme-text-muted)]">
-              <span>Progress</span>
+              <span>{t("hud.progress")}</span>
               <span className="tracking-normal text-[var(--theme-text-pending)]">{progress}%</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-[var(--theme-border)]">
@@ -66,18 +68,18 @@ export function HUD({ onOpenReading }: HUDProps) {
           {onOpenReading && (
             <button
               onClick={onOpenReading}
-              title="阅读预览"
+              title={t("hud.readingPreview")}
               className="soft-button rounded-lg px-3 py-2 text-xs cursor-pointer"
             >
-              阅读
+              {t("hud.reading")}
             </button>
           )}
 
           <button
             onClick={openSettings}
-            title="设置"
+            title={t("hud.settings")}
             className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
-            aria-label="设置"
+            aria-label={t("hud.settingsAria")}
           >
             <Settings size={20} />
           </button>

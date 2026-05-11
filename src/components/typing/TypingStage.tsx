@@ -3,8 +3,10 @@ import { useTypingStore } from "../../store/typingStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { CharSpan } from "./CharSpan.tsx";
 import { Cursor } from "./Cursor.tsx";
+import { useTranslation } from "react-i18next";
 
 export function TypingStage() {
+  const { t } = useTranslation();
   const paragraphs = useTypingStore((s) => s.paragraphs);
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
   const cursor = useTypingStore((s) => s.cursor);
@@ -43,14 +45,14 @@ export function TypingStage() {
     <div
       className="mx-auto w-full max-w-6xl select-none px-5 md:px-12"
       role="main"
-      aria-label="Typing area"
+      aria-label={t("typing.areaAria")}
       style={{ paddingTop: "40vh", paddingBottom: "40vh" }}
       onWheel={handleWheel}
     >
       {viewOffset !== 0 && (
         <div className="sticky top-20 z-20 mb-4 flex justify-center">
           <div className="glass-panel rounded-full px-4 py-1.5 text-xs text-[var(--theme-text-pending)]">
-            浏览中，输入将返回当前练习句
+            {t("typing.browsingNotice")}
           </div>
         </div>
       )}

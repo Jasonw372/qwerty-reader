@@ -1,5 +1,6 @@
 import type { DictEntry } from "../../types/index.ts";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 interface DictPanelProps {
   entry: DictEntry | null;
@@ -9,6 +10,7 @@ interface DictPanelProps {
 }
 
 export function DictPanel({ entry, loading, error, onClose }: DictPanelProps) {
+  const { t } = useTranslation();
   const visible = loading || !!entry || !!error;
 
   return (
@@ -24,14 +26,14 @@ export function DictPanel({ entry, loading, error, onClose }: DictPanelProps) {
           <button
             onClick={onClose}
             className="icon-button absolute top-3 right-3 grid size-7 place-items-center rounded-lg text-xs cursor-pointer"
-            aria-label="Close dictionary"
+            aria-label={t("dict.closeAria")}
           >
             ✕
           </button>
 
-          {loading && <p className="text-[var(--theme-text-pending)]">Looking up…</p>}
+          {loading && <p className="text-[var(--theme-text-pending)]">{t("dict.lookingUp")}</p>}
 
-          {error && <p className="text-[var(--theme-text-error)]">{error}</p>}
+          {error && <p className="text-[var(--theme-text-error)]">{t(error)}</p>}
 
           {entry && (
             <div>

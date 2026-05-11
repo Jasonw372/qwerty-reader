@@ -1,9 +1,13 @@
 import { useSettingsStore } from "../../store/settingsStore.ts";
-import type { Theme, CursorStyle } from "../../types/index.ts";
+import type { Theme, CursorStyle, Locale } from "../../types/index.ts";
+import { useTranslation } from "react-i18next";
 
 export function SettingsModal() {
+  const { t } = useTranslation();
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const locale = useSettingsStore((s) => s.locale);
+  const setLocale = useSettingsStore((s) => s.setLocale);
   const fontSize = useSettingsStore((s) => s.fontSize);
   const setFontSize = useSettingsStore((s) => s.setFontSize);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -13,15 +17,20 @@ export function SettingsModal() {
   const closeSettings = useSettingsStore((s) => s.closeSettings);
 
   const themes: { key: Theme; label: string }[] = [
-    { key: "auto", label: "跟随系统" },
-    { key: "dark", label: "Tokyo Night" },
-    { key: "parchment", label: "Parchment" },
+    { key: "auto", label: t("settings.themeAuto") },
+    { key: "dark", label: t("settings.themeDark") },
+    { key: "parchment", label: t("settings.themeParchment") },
   ];
 
   const cursors: { key: CursorStyle; label: string; preview: string }[] = [
-    { key: "line", label: "竖线", preview: "|" },
-    { key: "block", label: "块状", preview: "█" },
-    { key: "underline", label: "下划线", preview: "_" },
+    { key: "line", label: t("settings.cursorLine"), preview: "|" },
+    { key: "block", label: t("settings.cursorBlock"), preview: "█" },
+    { key: "underline", label: t("settings.cursorUnderline"), preview: "_" },
+  ];
+
+  const locales: { key: Locale; label: string }[] = [
+    { key: "zh-CN", label: t("settings.languageZh") },
+    { key: "en-US", label: t("settings.languageEn") },
   ];
 
   return (
@@ -33,11 +42,12 @@ export function SettingsModal() {
         className="glass-panel relative flex max-h-[82vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl font-mono"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
           <div>
-            <span className="text-base font-medium text-[var(--theme-text-correct)]">设置</span>
-            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">外观、声音和输入反馈</p>
+            <span className="text-base font-medium text-[var(--theme-text-correct)]">
+              {t("settings.title")}
+            </span>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">{t("settings.subtitle")}</p>
           </div>
           <button
             onClick={closeSettings}
@@ -47,11 +57,9 @@ export function SettingsModal() {
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
-          {/* Theme */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-[var(--theme-text-muted)]">主题</label>
+            <label className="text-xs text-[var(--theme-text-muted)]">{t("settings.theme")}</label>
             <div className="flex gap-2">
               {themes.map(({ key, label }) => (
                 <button
@@ -69,10 +77,32 @@ export function SettingsModal() {
             </div>
           </div>
 
-          {/* Font size */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs text-[var(--theme-text-muted)]">
+              {t("settings.language")}
+            </label>
+            <div className="flex gap-2">
+              {locales.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setLocale(key)}
+                  className={`flex-1 rounded-xl border py-2 text-xs cursor-pointer transition-colors ${
+                    locale === key
+                      ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
+                      : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:border-[var(--theme-text-pending)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-[var(--theme-text-muted)]">字体大小</label>
+              <label className="text-xs text-[var(--theme-text-muted)]">
+                {t("settings.fontSize")}
+              </label>
               <span className="text-xs text-[var(--theme-text-correct)]">{fontSize}px</span>
             </div>
             <input
@@ -90,9 +120,8 @@ export function SettingsModal() {
             </div>
           </div>
 
-          {/* Sound */}
           <div className="flex items-center justify-between">
-            <label className="text-xs text-[var(--theme-text-muted)]">音效</label>
+            <label className="text-xs text-[var(--theme-text-muted)]">{t("settings.sound")}</label>
             <button
               onClick={toggleSound}
               className={`relative h-6 w-12 rounded-full border transition-colors cursor-pointer ${
@@ -100,7 +129,7 @@ export function SettingsModal() {
                   ? "border-[var(--theme-text-correct)] bg-[var(--theme-text-correct)]/20"
                   : "border-[var(--theme-border)] bg-transparent"
               }`}
-              aria-label="切换音效"
+              aria-label={t("settings.soundToggleAria")}
             >
               <span
                 className={`absolute top-0.5 size-5 rounded-full transition-all ${
@@ -112,9 +141,10 @@ export function SettingsModal() {
             </button>
           </div>
 
-          {/* Cursor style */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-[var(--theme-text-muted)]">光标样式</label>
+            <label className="text-xs text-[var(--theme-text-muted)]">
+              {t("settings.cursorStyle")}
+            </label>
             <div className="flex gap-2">
               {cursors.map(({ key, label, preview }) => (
                 <button

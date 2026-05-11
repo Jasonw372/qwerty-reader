@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { Theme, CursorStyle } from "../types/index.ts";
+import type { Theme, CursorStyle, Locale } from "../types/index.ts";
+import i18n, { detectLocale, persistLocale, applyDocumentLanguage } from "../i18n/index.ts";
 
 type ResolvedTheme = Exclude<Theme, "auto">;
 
@@ -23,11 +24,13 @@ function applyTheme(theme: Theme): void {
 
 interface SettingsState {
   theme: Theme;
+  locale: Locale;
   fontSize: number;
   soundEnabled: boolean;
   cursorStyle: CursorStyle;
   settingsOpen: boolean;
   setTheme: (theme: Theme) => void;
+  setLocale: (locale: Locale) => void;
   setFontSize: (size: number) => void;
   toggleSound: () => void;
   setCursorStyle: (style: CursorStyle) => void;
@@ -36,6 +39,7 @@ interface SettingsState {
 }
 
 const initialTheme = getStoredTheme();
+const initialLocale = detectLocale();
 applyTheme(initialTheme);
 
 window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
@@ -44,6 +48,7 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", ()
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: initialTheme,
+  locale: initialLocale,
   fontSize: Number(localStorage.getItem("fontSize")) || 30,
   soundEnabled: localStorage.getItem("sound") !== "off",
   cursorStyle: (localStorage.getItem("cursorStyle") as CursorStyle) ?? "line",
@@ -53,6 +58,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     applyTheme(theme);
     localStorage.setItem("theme", theme);
     set({ theme });
+  },
+
+  setLocale(locale) {
+    persistLocale(locale);
+    applyDocumentLanguage(locale);
+    void i18n.changeLanguage(locale);
+    set({ locale });
   },
 
   setFontSize(fontSize) {
