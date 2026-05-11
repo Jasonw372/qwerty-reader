@@ -38,6 +38,9 @@ export interface TypingStats {
 export interface Keystroke {
   timestamp: number;
   correct: boolean;
+  input: string;
+  expected: string;
+  paragraphIndex: number;
 }
 
 export interface DictEntry {

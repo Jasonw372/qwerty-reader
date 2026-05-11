@@ -15,13 +15,12 @@ export function useKeyboard(): void {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (managerOpen || settingsOpen) return;
-      if (isFinished) return;
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
-
       if (e.key === "Escape") {
         reset();
         return;
       }
+      if (isFinished) return;
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key.length !== 1) return;
 
       e.preventDefault();

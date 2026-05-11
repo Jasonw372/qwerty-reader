@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ParagraphData, CharStatus, Keystroke } from "../types/index.ts";
 import { parseArticle } from "../lib/textParser.ts";
-import { calcWPM, calcAccuracy } from "../lib/wpm.ts";
+import { calcWPM, calcAccuracy, calcFinalWPM } from "../lib/wpm.ts";
 
 interface TypingState {
   paragraphs: ParagraphData[];
@@ -64,7 +64,16 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     const correct = input === expected;
     const newStatus: CharStatus = correct ? "correct" : "incorrect";
 
-    const newKeystrokes: Keystroke[] = [...keystrokes, { timestamp: now, correct }];
+    const newKeystrokes: Keystroke[] = [
+      ...keystrokes,
+      {
+        timestamp: now,
+        correct,
+        input,
+        expected,
+        paragraphIndex: activeParagraphIndex,
+      },
+    ];
 
     const updatedChars = para.chars.map((c, i) => {
       if (i === cursor) return { ...c, status: newStatus };
@@ -82,6 +91,8 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     let nextParagraphIndex = activeParagraphIndex;
     let finalParagraphs = updatedParagraphs;
     let isFinished = false;
+    let elapsed = get().elapsed;
+    let wpm = calcWPM(newKeystrokes, now);
 
     if (paraFinished) {
       const hasNext = activeParagraphIndex + 1 < paragraphs.length;
@@ -100,6 +111,8 @@ export const useTypingStore = create<TypingState>((set, get) => ({
         });
       } else {
         isFinished = true;
+        elapsed = Math.floor((now - startTime) / 1000);
+        wpm = calcFinalWPM(newKeystrokes, startTime, now);
       }
     }
 
@@ -109,8 +122,9 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       activeParagraphIndex: nextParagraphIndex,
       keystrokes: newKeystrokes,
       startTime,
+      elapsed,
       isFinished,
-      wpm: calcWPM(newKeystrokes, now),
+      wpm,
       accuracy: calcAccuracy(newKeystrokes),
     });
   },

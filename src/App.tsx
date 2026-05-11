@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { HUD } from "./components/hud/HUD.tsx";
 import { TypingStage } from "./components/typing/TypingStage.tsx";
+import { FinishSummary } from "./components/summary/FinishSummary.tsx";
 import { DictPanel } from "./components/dict/DictPanel.tsx";
 import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
@@ -20,6 +21,7 @@ export function App() {
   const loadFromStorage = useArticleStore((s) => s.loadFromStorage);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const closeSettings = useSettingsStore((s) => s.closeSettings);
+  const isFinished = useTypingStore((s) => s.isFinished);
   const { entry, loading, error, lookup, clear } = useDict();
   const loadedRef = useRef<string | null>(null);
 
@@ -67,7 +69,7 @@ export function App() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--theme-bg)" }}>
       <HUD />
       <main className="flex-1 overflow-y-auto pb-10">
-        <TypingStage />
+        {isFinished ? <FinishSummary /> : <TypingStage />}
       </main>
       <DictPanel entry={entry} loading={loading} error={error} onClose={clear} />
       <ShortcutsBar />

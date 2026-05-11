@@ -9,12 +9,17 @@ export function HUD() {
   const elapsed = useTypingStore((s) => s.elapsed);
   const paragraphs = useTypingStore((s) => s.paragraphs);
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
+  const isFinished = useTypingStore((s) => s.isFinished);
   const article = useArticleStore((s) => s.currentArticle);
   const openManager = useArticleStore((s) => s.openManager);
   const openSettings = useSettingsStore((s) => s.openSettings);
 
   const progress =
-    paragraphs.length > 0 ? Math.round((activeParagraphIndex / paragraphs.length) * 100) : 0;
+    paragraphs.length > 0
+      ? isFinished
+        ? 100
+        : Math.round((activeParagraphIndex / paragraphs.length) * 100)
+      : 0;
 
   return (
     <header
