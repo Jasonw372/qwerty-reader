@@ -4,7 +4,7 @@ import { useSettingsStore } from "../store/settingsStore.ts";
 import { useArticleStore } from "../store/articleStore.ts";
 import { playCorrect, playIncorrect, playKeyup, resumeAudio } from "../lib/audio.ts";
 
-export function useKeyboard(): void {
+export function useKeyboard(enabled = true): void {
   const typeChar = useTypingStore((s) => s.typeChar);
   const backspace = useTypingStore((s) => s.backspace);
   const reset = useTypingStore((s) => s.reset);
@@ -15,6 +15,7 @@ export function useKeyboard(): void {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
+      if (!enabled) return;
       if (managerOpen || settingsOpen) return;
       if (e.key === "Escape") {
         reset();
@@ -46,6 +47,7 @@ export function useKeyboard(): void {
     }
 
     function handleKeyUp(e: KeyboardEvent): void {
+      if (!enabled) return;
       if (managerOpen || settingsOpen) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key.length !== 1) return;
@@ -58,5 +60,5 @@ export function useKeyboard(): void {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [typeChar, backspace, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
+  }, [enabled, typeChar, backspace, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
 }

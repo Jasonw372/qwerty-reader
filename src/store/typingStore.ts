@@ -16,6 +16,7 @@ interface TypingState {
   accuracy: number;
 
   loadArticle: (content: string) => void;
+  clearSession: () => void;
   typeChar: (input: string) => void;
   backspace: () => void;
   reset: () => void;
@@ -41,6 +42,20 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     }
     set({
       paragraphs: parsed,
+      activeParagraphIndex: 0,
+      cursor: 0,
+      keystrokes: [],
+      startTime: null,
+      elapsed: 0,
+      isFinished: false,
+      wpm: 0,
+      accuracy: 100,
+    });
+  },
+
+  clearSession() {
+    set({
+      paragraphs: [],
       activeParagraphIndex: 0,
       cursor: 0,
       keystrokes: [],
@@ -210,6 +225,7 @@ export const useTypingStore = create<TypingState>((set, get) => ({
 
   reset() {
     const { paragraphs } = get();
+    if (paragraphs.length === 0) return;
     const allText = paragraphs.map((p) => p.text).join("\n\n");
     get().loadArticle(allText);
   },

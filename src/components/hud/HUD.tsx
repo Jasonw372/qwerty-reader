@@ -3,7 +3,11 @@ import { useArticleStore } from "../../store/articleStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
 
-export function HUD() {
+interface HUDProps {
+  onOpenReading?: () => void;
+}
+
+export function HUD({ onOpenReading }: HUDProps) {
   const wpm = useTypingStore((s) => s.wpm);
   const accuracy = useTypingStore((s) => s.accuracy);
   const elapsed = useTypingStore((s) => s.elapsed);
@@ -45,6 +49,16 @@ export function HUD() {
           ACC: <span className="text-[var(--theme-text-correct)]">{accuracy}%</span>
         </span>
         <span className="text-[var(--theme-text-correct)]">{formatTime(elapsed)}</span>
+
+        {onOpenReading && (
+          <button
+            onClick={onOpenReading}
+            title="阅读预览"
+            className="px-2 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent text-xs cursor-pointer"
+          >
+            阅读
+          </button>
+        )}
 
         <button
           onClick={openSettings}
