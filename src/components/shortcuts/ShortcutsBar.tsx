@@ -4,6 +4,7 @@ const SHORTCUTS = [
   { key: "Tab", label: "文章" },
   { key: "↑/↓", label: "逐句查看" },
   { key: "PgUp/PgDn", label: "上下查看" },
+  { key: "Enter", label: "回到输入" },
 ];
 
 export function ShortcutsBar() {

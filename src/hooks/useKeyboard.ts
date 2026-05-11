@@ -33,6 +33,11 @@ export function useKeyboard(enabled = true): void {
         shiftViewOffset(1);
         return;
       }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        resetViewOffset();
+        return;
+      }
       if (isFinished) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key === "Backspace") {
