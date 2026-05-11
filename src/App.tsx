@@ -78,7 +78,7 @@ export function App() {
 
   return (
     <div
-      className="app-shell min-h-screen flex flex-col"
+      className="app-shell flex h-screen flex-col"
       style={{ backgroundColor: "var(--theme-bg)" }}
     >
       <HUD onOpenReading={currentArticle ? () => setPhase("reading") : undefined} />

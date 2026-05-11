@@ -28,7 +28,7 @@ export function HUD({ onOpenReading }: HUDProps) {
 
   return (
     <header
-      className="sticky top-0 z-10 border-b border-[var(--theme-border)] px-4 py-3 font-mono backdrop-blur-xl md:px-8"
+      className="fixed inset-x-0 top-0 z-40 border-b border-[var(--theme-border)] px-4 py-3 font-mono backdrop-blur-xl md:px-8"
       style={{ backgroundColor: "var(--theme-hud-bg)" }}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
