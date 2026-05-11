@@ -74,11 +74,11 @@ function buildParagraphPoints(keystrokes: Keystroke[], paragraphCount: number): 
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 py-4">
-      <div className="text-xs uppercase tracking-wider text-[var(--theme-text-pending)]">
+    <div className="hairline-panel rounded-2xl px-5 py-4">
+      <div className="text-xs uppercase tracking-[0.18em] text-[var(--theme-text-pending)]">
         {label}
       </div>
-      <div className="mt-2 text-3xl font-medium text-[var(--theme-text-correct)]">{value}</div>
+      <div className="mt-2 text-4xl font-medium text-[var(--theme-text-correct)]">{value}</div>
     </div>
   );
 }
@@ -118,29 +118,29 @@ export function FinishSummary() {
   const path = points.map((point) => `${point.x},${point.y}`).join(" ");
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-8 pb-24 pt-20 text-[var(--theme-text-correct)]">
-      <div className="mb-8 flex flex-col gap-4 border-b border-[var(--theme-border)] pb-6 md:flex-row md:items-end md:justify-between">
+    <section className="animate-float-in mx-auto w-full max-w-6xl px-5 pb-24 pt-16 text-[var(--theme-text-correct)] md:px-8 md:pt-20">
+      <div className="mb-8 flex flex-col gap-4 border-b border-[var(--theme-border)] pb-7 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm text-[var(--theme-text-pending)]">练习完成</p>
-          <h1 className="mt-2 text-4xl font-medium">本篇总结</h1>
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">练习完成</p>
+          <h1 className="mt-3 text-4xl font-medium tracking-normal md:text-5xl">本篇总结</h1>
         </div>
         <button
           type="button"
           onClick={reset}
-          className="w-fit border border-[var(--theme-text-correct)] bg-transparent px-5 py-2 text-sm text-[var(--theme-text-correct)] transition-colors hover:bg-[var(--theme-text-correct)] hover:text-[var(--theme-bg)]"
+          className="primary-button w-fit rounded-xl px-5 py-2.5 text-sm cursor-pointer"
         >
           一键重练
         </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Metric label="最终 WPM" value={wpm} />
         <Metric label="准确率" value={`${accuracy}%`} />
         <Metric label="总用时" value={formatTime(elapsed)} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
-        <div className="border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+        <div className="glass-panel rounded-2xl p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-medium">错误热力图</h2>
             <span className="text-xs text-[var(--theme-text-pending)]">
@@ -158,7 +158,7 @@ export function FinishSummary() {
                 return (
                   <div
                     key={item.label}
-                    className="min-w-14 border border-[var(--theme-border)] px-3 py-2 text-center"
+                    className="min-w-14 rounded-xl border border-[var(--theme-border)] px-3 py-2 text-center shadow-sm"
                     style={{
                       backgroundColor: `rgba(247, 118, 142, ${intensity})`,
                     }}
@@ -180,7 +180,7 @@ export function FinishSummary() {
           </div>
         </div>
 
-        <div className="border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+        <div className="glass-panel rounded-2xl p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-medium">段落速度曲线</h2>
             <span className="text-xs text-[var(--theme-text-pending)]">WPM / paragraph</span>
@@ -259,7 +259,10 @@ function ErrorRank({ title, items }: { title: string; items: ErrorItem[] }) {
       {items.length > 0 ? (
         <ol className="space-y-1 text-sm">
           {items.slice(0, 5).map((item) => (
-            <li key={item.label} className="flex items-center justify-between gap-3">
+            <li
+              key={item.label}
+              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--theme-border)] px-3 py-2"
+            >
               <span className="truncate text-[var(--theme-text-correct)]">{item.label}</span>
               <span className="text-[var(--theme-text-error)]">{item.count}</span>
             </li>

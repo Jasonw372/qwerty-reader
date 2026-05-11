@@ -19,15 +19,11 @@ export function DictPanel({ entry, loading, error, onClose }: DictPanelProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 24 }}
           transition={{ duration: 0.2 }}
-          className="fixed right-6 top-20 w-72 rounded-lg p-4 text-sm font-mono shadow-xl z-20"
-          style={{
-            backgroundColor: "var(--theme-surface)",
-            border: "1px solid var(--theme-border)",
-          }}
+          className="glass-panel fixed right-4 top-24 z-20 w-[min(20rem,calc(100vw-2rem))] rounded-2xl p-5 text-sm font-mono md:right-6"
         >
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)] transition-colors"
+            className="icon-button absolute top-3 right-3 grid size-7 place-items-center rounded-lg text-xs cursor-pointer"
             aria-label="Close dictionary"
           >
             ✕
@@ -39,7 +35,9 @@ export function DictPanel({ entry, loading, error, onClose }: DictPanelProps) {
 
           {entry && (
             <div>
-              <p className="text-[var(--theme-text-correct)] font-medium text-base">{entry.word}</p>
+              <p className="pr-8 text-lg font-medium text-[var(--theme-text-correct)]">
+                {entry.word}
+              </p>
               {entry.phonetic && (
                 <p className="text-[var(--theme-text-pending)] text-xs mb-3">{entry.phonetic}</p>
               )}

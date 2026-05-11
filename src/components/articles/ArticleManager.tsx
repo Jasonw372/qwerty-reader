@@ -99,37 +99,40 @@ export function ArticleManager() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
       onClick={closeManager}
     >
       <div
-        className="relative w-full max-w-2xl mx-4 rounded-xl font-mono overflow-hidden flex flex-col max-h-[80vh] border border-[var(--theme-border)]"
-        style={{ backgroundColor: "var(--theme-bg)" }}
+        className="glass-panel relative flex max-h-[82vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl font-mono"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border)]">
-          <span className="text-sm font-medium text-[var(--theme-text-correct)]">文章管理</span>
+        <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
+          <div>
+            <span className="text-base font-medium text-[var(--theme-text-correct)]">文章管理</span>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+              {articles.length} 篇可用文章
+            </p>
+          </div>
           <button
             onClick={closeManager}
-            className="text-xs px-2 py-1 rounded border border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent cursor-pointer"
+            className="icon-button rounded-lg px-3 py-1.5 text-xs cursor-pointer"
           >
             Esc
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex px-6 pt-4 gap-6 text-xs">
+        <div className="flex gap-2 px-6 pt-5 text-xs">
           {tabs.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`pb-1 bg-transparent border-0 border-b cursor-pointer transition-colors ${
+              className={`rounded-full border px-3 py-1.5 cursor-pointer transition-colors ${
                 tab === key
-                  ? "text-[var(--theme-text-correct)] border-[var(--theme-text-correct)]"
-                  : "text-[var(--theme-text-pending)] border-transparent hover:text-[var(--theme-text-correct)]"
+                  ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
+                  : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)]"
               }`}
-              style={{ fontFamily: "inherit", fontSize: "inherit" }}
             >
               {label}
             </button>
@@ -137,14 +140,14 @@ export function ArticleManager() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "list" && (
             <ul className="flex flex-col gap-2">
               {articles.map((a) => (
                 <li
                   key={a.id}
                   onClick={() => handleSelect(a)}
-                  className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer border border-[var(--theme-border)] hover:border-[var(--theme-text-pending)] transition-colors"
+                  className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] px-4 py-3 cursor-pointer transition-all hover:-translate-y-0.5 hover:border-[var(--theme-border-strong)]"
                   style={{
                     backgroundColor:
                       a.id === currentArticle?.id ? "var(--theme-hud-bg)" : "transparent",
@@ -169,8 +172,7 @@ export function ArticleManager() {
                   {a.id !== "sample-1" && (
                     <button
                       onClick={(e) => handleRemove(e, a.id)}
-                      className="ml-4 shrink-0 text-xs px-2 py-0.5 rounded border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-pending)] hover:border-[var(--theme-text-pending)] transition-colors bg-transparent cursor-pointer"
-                      style={{ fontFamily: "inherit" }}
+                      className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
                     >
                       删除
                     </button>
@@ -198,8 +200,7 @@ export function ArticleManager() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className="shrink-0 px-4 py-2 rounded text-sm cursor-pointer border border-[var(--theme-border)] text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors"
-                  style={{ backgroundColor: "var(--theme-hud-bg)" }}
+                  className="soft-button shrink-0 rounded-xl px-4 py-2 text-sm cursor-pointer"
                 >
                   选择文件
                 </label>
@@ -215,14 +216,12 @@ export function ArticleManager() {
                   setUploadTitle(e.target.value);
                   setUploadError("");
                 }}
-                className="w-full px-3 py-2 rounded text-sm outline-none border border-[var(--theme-border)] focus:border-[var(--theme-text-pending)] transition-colors text-[var(--theme-text-pending)] placeholder:text-[var(--theme-text-muted)]"
-                style={{ backgroundColor: "var(--theme-hud-bg)", fontFamily: "inherit" }}
+                className="field w-full rounded-xl px-3 py-2 text-sm outline-none"
               />
               <button
                 onClick={handleUploadSubmit}
                 disabled={!uploadContent}
-                className="self-end px-5 py-2 rounded text-sm border border-[var(--theme-border)] text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "var(--theme-hud-bg)", fontFamily: "inherit" }}
+                className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
               >
                 添加文章
               </button>
@@ -244,8 +243,7 @@ export function ArticleManager() {
                   setTitle(e.target.value);
                   setInputError("");
                 }}
-                className="w-full px-3 py-2 rounded text-sm outline-none border border-[var(--theme-border)] focus:border-[var(--theme-text-pending)] transition-colors text-[var(--theme-text-pending)] placeholder:text-[var(--theme-text-muted)]"
-                style={{ backgroundColor: "var(--theme-hud-bg)", fontFamily: "inherit" }}
+                className="field w-full rounded-xl px-3 py-2 text-sm outline-none"
               />
               <textarea
                 placeholder="粘贴或输入文章内容..."
@@ -255,13 +253,11 @@ export function ArticleManager() {
                   setInputError("");
                 }}
                 rows={10}
-                className="w-full px-3 py-2 rounded text-sm outline-none resize-none border border-[var(--theme-border)] focus:border-[var(--theme-text-pending)] transition-colors text-[var(--theme-text-pending)] placeholder:text-[var(--theme-text-muted)]"
-                style={{ backgroundColor: "var(--theme-hud-bg)", fontFamily: "inherit" }}
+                className="field w-full resize-none rounded-xl px-3 py-2 text-sm outline-none"
               />
               <button
                 onClick={handleInputSubmit}
-                className="self-end px-5 py-2 rounded text-sm border border-[var(--theme-border)] text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors cursor-pointer"
-                style={{ backgroundColor: "var(--theme-hud-bg)", fontFamily: "inherit" }}
+                className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer"
               >
                 添加文章
               </button>

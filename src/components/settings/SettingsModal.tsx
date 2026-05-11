@@ -26,20 +26,22 @@ export function SettingsModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
       onClick={closeSettings}
     >
       <div
-        className="relative w-full max-w-lg mx-4 rounded-xl font-mono overflow-hidden flex flex-col max-h-[80vh] border border-[var(--theme-border)]"
-        style={{ backgroundColor: "var(--theme-bg)" }}
+        className="glass-panel relative flex max-h-[82vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl font-mono"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border)]">
-          <span className="text-sm font-medium text-[var(--theme-text-correct)]">设置</span>
+        <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
+          <div>
+            <span className="text-base font-medium text-[var(--theme-text-correct)]">设置</span>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">外观、声音和输入反馈</p>
+          </div>
           <button
             onClick={closeSettings}
-            className="text-xs px-2 py-1 rounded border border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)] hover:border-[var(--theme-text-correct)] transition-colors bg-transparent cursor-pointer"
+            className="icon-button rounded-lg px-3 py-1.5 text-xs cursor-pointer"
           >
             Esc
           </button>
@@ -55,15 +57,11 @@ export function SettingsModal() {
                 <button
                   key={key}
                   onClick={() => setTheme(key)}
-                  className={`flex-1 py-2 rounded text-xs border transition-colors cursor-pointer ${
+                  className={`flex-1 rounded-xl border py-2 text-xs cursor-pointer transition-colors ${
                     theme === key
-                      ? "border-[var(--theme-text-correct)] text-[var(--theme-text-correct)]"
+                      ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
                       : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:border-[var(--theme-text-pending)]"
                   }`}
-                  style={{
-                    backgroundColor: theme === key ? "var(--theme-hud-bg)" : "transparent",
-                    fontFamily: "inherit",
-                  }}
                 >
                   {label}
                 </button>
@@ -84,7 +82,7 @@ export function SettingsModal() {
               step={1}
               value={fontSize}
               onChange={(e) => setFontSize(Number(e.target.value))}
-              className="w-full accent-[var(--theme-cursor)] cursor-pointer"
+              className="h-2 w-full cursor-pointer accent-[var(--theme-cursor)]"
             />
             <div className="flex justify-between text-xs text-[var(--theme-text-muted)]">
               <span>14px</span>
@@ -97,16 +95,17 @@ export function SettingsModal() {
             <label className="text-xs text-[var(--theme-text-muted)]">音效</label>
             <button
               onClick={toggleSound}
-              className={`relative w-10 h-5 rounded-full border transition-colors cursor-pointer ${
+              className={`relative h-6 w-12 rounded-full border transition-colors cursor-pointer ${
                 soundEnabled
                   ? "border-[var(--theme-text-correct)] bg-[var(--theme-text-correct)]/20"
                   : "border-[var(--theme-border)] bg-transparent"
               }`}
+              aria-label="切换音效"
             >
               <span
-                className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all ${
+                className={`absolute top-0.5 size-5 rounded-full transition-all ${
                   soundEnabled
-                    ? "left-[calc(100%-1rem-2px)] bg-[var(--theme-text-correct)]"
+                    ? "left-[calc(100%-1.375rem)] bg-[var(--theme-text-correct)]"
                     : "left-0.5 bg-[var(--theme-text-muted)]"
                 }`}
               />
@@ -121,15 +120,11 @@ export function SettingsModal() {
                 <button
                   key={key}
                   onClick={() => setCursorStyle(key)}
-                  className={`flex-1 py-2 rounded text-xs border transition-colors cursor-pointer flex flex-col items-center gap-1 ${
+                  className={`flex flex-1 flex-col items-center gap-1 rounded-xl border py-2 text-xs cursor-pointer transition-colors ${
                     cursorStyle === key
-                      ? "border-[var(--theme-text-correct)] text-[var(--theme-text-correct)]"
+                      ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
                       : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:border-[var(--theme-text-pending)]"
                   }`}
-                  style={{
-                    backgroundColor: cursorStyle === key ? "var(--theme-hud-bg)" : "transparent",
-                    fontFamily: "inherit",
-                  }}
                 >
                   <span className="text-base leading-none">{preview}</span>
                   <span>{label}</span>

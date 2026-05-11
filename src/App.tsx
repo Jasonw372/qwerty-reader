@@ -77,7 +77,10 @@ export function App() {
   }, [lookup, managerOpen, openManager, closeManager, settingsOpen, closeSettings]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--theme-bg)" }}>
+    <div
+      className="app-shell min-h-screen flex flex-col"
+      style={{ backgroundColor: "var(--theme-bg)" }}
+    >
       <HUD onOpenReading={currentArticle ? () => setPhase("reading") : undefined} />
       <main className="flex-1 overflow-y-auto pb-10">
         {currentArticle && phase === "reading" && (
