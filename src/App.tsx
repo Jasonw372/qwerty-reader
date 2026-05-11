@@ -7,12 +7,14 @@ import { DictPanel } from "./components/dict/DictPanel.tsx";
 import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
 import { SettingsModal } from "./components/settings/SettingsModal.tsx";
+import { AuthGate } from "./components/auth/AuthGate.tsx";
 import { useKeyboard } from "./hooks/useKeyboard.ts";
 import { useTimer } from "./hooks/useTimer.ts";
 import { useDict } from "./hooks/useDict.ts";
 import { useTypingStore } from "./store/typingStore.ts";
 import { useArticleStore } from "./store/articleStore.ts";
 import { useSettingsStore } from "./store/settingsStore.ts";
+import { useAuthStore } from "./store/authStore.ts";
 
 type PracticePhase = "reading" | "typing";
 
@@ -28,12 +30,22 @@ export function App() {
   const { entry, loading, error, lookup, clear } = useDict();
   const [phase, setPhase] = useState<PracticePhase>("typing");
 
-  useKeyboard(phase === "typing");
+  const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
+  const initializeAuth = useAuthStore((s) => s.initialize);
+  const authed = Boolean(user);
+
+  useKeyboard(authed && phase === "typing");
   useTimer();
 
   useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    if (!authed) return;
     void loadFromStorage();
-  }, [loadFromStorage]);
+  }, [authed, loadFromStorage]);
 
   useEffect(() => {
     if (!currentArticle) {
@@ -51,6 +63,7 @@ export function App() {
   }
 
   useEffect(() => {
+    if (!authed) return;
     function handleGlobal(e: KeyboardEvent) {
       if (e.key === "Tab") {
         e.preventDefault();
@@ -74,7 +87,11 @@ export function App() {
     }
     window.addEventListener("keydown", handleGlobal);
     return () => window.removeEventListener("keydown", handleGlobal);
-  }, [lookup, managerOpen, openManager, closeManager, settingsOpen, closeSettings]);
+  }, [authed, lookup, managerOpen, openManager, closeManager, settingsOpen, closeSettings]);
+
+  if (!initialized || !authed) {
+    return <AuthGate ready={initialized} />;
+  }
 
   return (
     <div

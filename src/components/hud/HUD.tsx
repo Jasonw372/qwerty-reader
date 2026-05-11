@@ -4,6 +4,7 @@ import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { UserMenu } from "../auth/UserMenu.tsx";
 
 interface HUDProps {
   onOpenReading?: () => void;
@@ -74,6 +75,8 @@ export function HUD({ onOpenReading }: HUDProps) {
               {t("hud.reading")}
             </button>
           )}
+
+          <UserMenu />
 
           <button
             onClick={openSettings}
