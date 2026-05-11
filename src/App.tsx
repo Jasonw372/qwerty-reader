@@ -15,6 +15,7 @@ import { useTypingStore } from "./store/typingStore.ts";
 import { useArticleStore } from "./store/articleStore.ts";
 import { useSettingsStore } from "./store/settingsStore.ts";
 import { useAuthStore } from "./store/authStore.ts";
+import { uploadSession } from "./lib/sync.ts";
 
 type PracticePhase = "reading" | "typing";
 
@@ -24,6 +25,7 @@ export function App() {
   const openManager = useArticleStore((s) => s.openManager);
   const closeManager = useArticleStore((s) => s.closeManager);
   const loadFromStorage = useArticleStore((s) => s.loadFromStorage);
+  const syncFromCloud = useArticleStore((s) => s.syncFromCloud);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const closeSettings = useSettingsStore((s) => s.closeSettings);
   const isFinished = useTypingStore((s) => s.isFinished);
@@ -44,8 +46,11 @@ export function App() {
 
   useEffect(() => {
     if (!authed) return;
-    void loadFromStorage();
-  }, [authed, loadFromStorage]);
+    void (async () => {
+      await loadFromStorage();
+      await syncFromCloud();
+    })();
+  }, [authed, loadFromStorage, syncFromCloud]);
 
   useEffect(() => {
     if (!currentArticle) {
@@ -61,6 +66,24 @@ export function App() {
     useTypingStore.getState().loadArticle(currentArticle.content);
     setPhase("typing");
   }
+
+  useEffect(() => {
+    if (!authed || !isFinished) return;
+    const { wpm, accuracy, elapsed, effectiveTypeCount, correctTypeCount, keystrokes } =
+      useTypingStore.getState();
+    void uploadSession({
+      articleId: currentArticle?.id,
+      stats: {
+        wpm,
+        accuracy,
+        elapsed,
+        totalChars: correctTypeCount,
+        correctChars: correctTypeCount,
+        errorChars: Math.max(0, effectiveTypeCount - correctTypeCount),
+      },
+      keystrokes,
+    });
+  }, [authed, isFinished, currentArticle?.id]);
 
   useEffect(() => {
     if (!authed) return;

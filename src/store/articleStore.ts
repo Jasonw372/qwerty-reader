@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import type { Article } from "../types/index.ts";
+import { uploadArticle, deleteArticleRemote, fetchArticles } from "../lib/sync.ts";
 
 const SAMPLE: Article = {
   id: "sample-1",
@@ -20,18 +21,28 @@ interface ArticleState {
   articles: Article[];
   currentArticle: Article | null;
   managerOpen: boolean;
+  syncing: boolean;
   setCurrentArticle: (article: Article) => void;
   addArticle: (article: Article) => void;
   removeArticle: (id: string) => void;
   openManager: () => void;
   closeManager: () => void;
   loadFromStorage: () => Promise<void>;
+  syncFromCloud: () => Promise<void>;
+}
+
+function persistLocal(articles: Article[]) {
+  void idbSet(
+    IDB_KEY,
+    articles.filter((a) => a.id !== SAMPLE.id),
+  );
 }
 
 export const useArticleStore = create<ArticleState>((set, get) => ({
   articles: [SAMPLE],
   currentArticle: SAMPLE,
   managerOpen: false,
+  syncing: false,
 
   setCurrentArticle(article) {
     set({ currentArticle: article });
@@ -41,30 +52,26 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
   addArticle(article) {
     set((state) => {
       const articles = [...state.articles, article];
-      void idbSet(
-        IDB_KEY,
-        articles.filter((a) => a.id !== "sample-1"),
-      );
+      persistLocal(articles);
       return { articles };
     });
+    void uploadArticle(article);
   },
 
   removeArticle(id) {
-    if (id === "sample-1") return;
+    if (id === SAMPLE.id) return;
     set((state) => {
       const articles = state.articles.filter((a) => a.id !== id);
       const currentArticle =
         state.currentArticle?.id === id ? (articles[0] ?? null) : state.currentArticle;
       void idbDel(id);
-      void idbSet(
-        IDB_KEY,
-        articles.filter((a) => a.id !== "sample-1"),
-      );
+      persistLocal(articles);
       if (currentArticle?.id !== state.currentArticle?.id) {
         void idbSet(IDB_CURRENT_KEY, currentArticle?.id ?? null);
       }
       return { articles, currentArticle };
     });
+    void deleteArticleRemote(id);
   },
 
   openManager() {
@@ -83,5 +90,31 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
     const currentArticle =
       articles.find((a) => a.id === currentId) ?? get().currentArticle ?? SAMPLE;
     set({ articles, currentArticle });
+  },
+
+  async syncFromCloud() {
+    set({ syncing: true });
+    try {
+      const remote = await fetchArticles();
+      const localArticles = get().articles.filter((a) => a.id !== SAMPLE.id);
+      const remoteIds = new Set(remote.map((a) => a.id));
+
+      // 本地有但云端没有的文章 → 推上去
+      const toUpload = localArticles.filter((a) => !remoteIds.has(a.id));
+      await Promise.all(toUpload.map((a) => uploadArticle(a)));
+
+      // 合并:云端为准,加上本地新推上去的
+      const merged: Article[] = [SAMPLE, ...remote, ...toUpload];
+
+      const currentId = get().currentArticle?.id;
+      const currentArticle = merged.find((a) => a.id === currentId) ?? merged[0] ?? SAMPLE;
+
+      persistLocal(merged);
+      void idbSet(IDB_CURRENT_KEY, currentArticle.id);
+      set({ articles: merged, currentArticle, syncing: false });
+    } catch (err) {
+      console.error("syncFromCloud failed", err);
+      set({ syncing: false });
+    }
   },
 }));
