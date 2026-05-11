@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { LogOut, Cloud } from "lucide-react";
+import { LogOut, Cloud, Loader2 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useArticleStore } from "../../store/articleStore";
 import { useTranslation } from "react-i18next";
 
 export function UserMenu() {
   const { t } = useTranslation();
   const { user, signOut } = useAuthStore();
+  const syncing = useArticleStore((s) => s.syncing);
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (!user) return null;
@@ -18,6 +20,7 @@ export function UserMenu() {
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-neutral-700 transition-colors"
+        title={syncing ? t("auth.syncing") : t("auth.syncEnabled")}
       >
         {avatar ? (
           <img src={avatar} alt="" className="w-6 h-6 rounded-full" />
@@ -26,7 +29,11 @@ export function UserMenu() {
             {displayName[0].toUpperCase()}
           </div>
         )}
-        <Cloud size={14} className="text-emerald-500" />
+        {syncing ? (
+          <Loader2 size={14} className="animate-spin text-amber-500" />
+        ) : (
+          <Cloud size={14} className="text-emerald-500" />
+        )}
       </button>
 
       {menuOpen && (
@@ -34,7 +41,20 @@ export function UserMenu() {
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
           <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-amber-200 dark:border-neutral-700 py-1">
             <div className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 border-b border-amber-100 dark:border-neutral-700">
-              {displayName}
+              <div>{displayName}</div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+                {syncing ? (
+                  <>
+                    <Loader2 size={10} className="animate-spin text-amber-500" />
+                    <span>{t("auth.syncing")}</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud size={10} className="text-emerald-500" />
+                    <span>{t("auth.syncEnabled")}</span>
+                  </>
+                )}
+              </div>
             </div>
             <button
               onClick={() => {

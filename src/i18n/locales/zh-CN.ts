@@ -97,6 +97,7 @@ const zhCN = {
     signOut: "退出登录",
     syncEnabled: "云端同步",
     syncDescription: "自动同步文章和练习记录",
+    syncing: "同步中...",
     gateSubtitle: "登录后开始练习",
     emailOnlyHint: "仅支持邮箱注册,注册后需到邮箱确认",
     confirmEmailSent: "已向 {{email}} 发送确认邮件,点击邮件中的链接完成注册。",

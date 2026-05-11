@@ -97,6 +97,7 @@ const enUS = {
     signOut: "Sign Out",
     syncEnabled: "Cloud Sync",
     syncDescription: "Automatically sync articles and practice records",
+    syncing: "Syncing...",
     gateSubtitle: "Sign in to start practicing",
     emailOnlyHint: "Email-only sign-up. You'll need to confirm via the email we send.",
     confirmEmailSent: "Confirmation email sent to {{email}}. Click the link to finish signing up.",
