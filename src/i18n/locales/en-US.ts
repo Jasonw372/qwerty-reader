@@ -120,6 +120,18 @@ const enUS = {
     resendCooldown: "Resend in {{seconds}}s",
     errEmailAlreadyRegistered:
       "This email is already registered. Please sign in or use a different email.",
+    forgotPassword: "Forgot password?",
+    sendResetLink: "Send Reset Link",
+    backToSignIn: "Back to sign in",
+    resetEmailSent:
+      "Password reset link sent to {{email}}. Click the link in your email to continue.",
+    resetPasswordTitle: "Reset Password",
+    resetPasswordSubtitle: "Enter your new password",
+    newPassword: "New Password",
+    updatePassword: "Update Password",
+    resetSuccess: "Password updated. Please sign in again with your new password.",
+    signInAgain: "Sign In Again",
+    cancel: "Cancel",
   },
   typing: {
     areaAria: "Typing area",

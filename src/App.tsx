@@ -8,6 +8,7 @@ import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
 import { SettingsModal } from "./components/settings/SettingsModal.tsx";
 import { AuthGate } from "./components/auth/AuthGate.tsx";
+import { ResetPasswordGate } from "./components/auth/ResetPasswordGate.tsx";
 import { useKeyboard } from "./hooks/useKeyboard.ts";
 import { useTimer } from "./hooks/useTimer.ts";
 import { useDict } from "./hooks/useDict.ts";
@@ -34,8 +35,9 @@ export function App() {
 
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
+  const recoveryMode = useAuthStore((s) => s.recoveryMode);
   const initializeAuth = useAuthStore((s) => s.initialize);
-  const authed = Boolean(user);
+  const authed = Boolean(user) && !recoveryMode;
 
   useKeyboard(authed && phase === "typing");
   useTimer();
@@ -112,8 +114,14 @@ export function App() {
     return () => window.removeEventListener("keydown", handleGlobal);
   }, [authed, lookup, managerOpen, openManager, closeManager, settingsOpen, closeSettings]);
 
-  if (!initialized || !authed) {
-    return <AuthGate ready={initialized} />;
+  if (!initialized) {
+    return <AuthGate ready={false} />;
+  }
+  if (recoveryMode) {
+    return <ResetPasswordGate />;
+  }
+  if (!authed) {
+    return <AuthGate ready={true} />;
   }
 
   return (

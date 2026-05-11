@@ -7,7 +7,7 @@ interface AuthGateProps {
   ready: boolean;
 }
 
-type Mode = "login" | "signup";
+type Mode = "login" | "signup" | "forgot";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,7 +27,8 @@ function checkPassword(pw: string): PasswordChecks {
 
 export function AuthGate({ ready }: AuthGateProps) {
   const { t } = useTranslation();
-  const { signIn, signUp, signInWithOAuth, resendConfirmation, loading } = useAuthStore();
+  const { signIn, signUp, signInWithOAuth, resendConfirmation, sendPasswordReset, loading } =
+    useAuthStore();
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -53,7 +54,9 @@ export function AuthGate({ ready }: AuthGateProps) {
   const canSubmit =
     mode === "login"
       ? emailValid && password.length > 0 && !loading
-      : emailValid && passwordStrong && passwordsMatch && !loading;
+      : mode === "forgot"
+        ? emailValid && !loading
+        : emailValid && passwordStrong && passwordsMatch && !loading;
 
   if (!ready) {
     return (
@@ -74,6 +77,21 @@ export function AuthGate({ ready }: AuthGateProps) {
     if (mode === "login") {
       const { error: err } = await signIn(email, password);
       if (err) setError(err);
+      return;
+    }
+
+    if (mode === "forgot") {
+      if (!emailValid) {
+        setError(t("auth.errInvalidEmail"));
+        return;
+      }
+      const { error: err } = await sendPasswordReset(email);
+      if (err) {
+        setError(err);
+        return;
+      }
+      setNotice(t("auth.resetEmailSent", { email }));
+      setResendCooldown(60);
       return;
     }
 
@@ -175,29 +193,42 @@ export function AuthGate({ ready }: AuthGateProps) {
             value={email}
             onChange={setEmail}
             label={t("auth.email")}
-            invalid={mode === "signup" && email.length > 0 && !emailValid}
+            invalid={(mode === "signup" || mode === "forgot") && email.length > 0 && !emailValid}
             invalidHint={t("auth.errInvalidEmail")}
           />
 
-          <Field
-            icon={<Lock size={16} />}
-            type={showPassword ? "text" : "password"}
-            placeholder="••••••••"
-            value={password}
-            onChange={setPassword}
-            label={t("auth.password")}
-            trailing={
+          {mode !== "forgot" && (
+            <Field
+              icon={<Lock size={16} />}
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={setPassword}
+              label={t("auth.password")}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text-correct)]"
+                  aria-label={t("auth.togglePasswordVisibility")}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
+            />
+          )}
+
+          {mode === "login" && (
+            <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text-correct)]"
-                aria-label={t("auth.togglePasswordVisibility")}
+                onClick={() => switchMode("forgot")}
+                className="text-xs text-[var(--theme-text-muted)] underline hover:text-[var(--theme-text-correct)]"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {t("auth.forgotPassword")}
               </button>
-            }
-          />
-
+            </div>
+          )}
           {mode === "signup" && password.length > 0 && (
             <ul className="space-y-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 text-xs">
               <Rule ok={checks.length} label={t("auth.ruleLength")} />
@@ -228,9 +259,23 @@ export function AuthGate({ ready }: AuthGateProps) {
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-accent)] py-2 font-medium text-[var(--theme-bg)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
-            {mode === "login" ? t("auth.signIn") : t("auth.signUp")}
+            {mode === "login"
+              ? t("auth.signIn")
+              : mode === "signup"
+                ? t("auth.signUp")
+                : t("auth.sendResetLink")}
           </button>
         </form>
+
+        {mode === "forgot" && (
+          <button
+            type="button"
+            onClick={() => switchMode("login")}
+            className="mt-3 w-full text-center text-xs text-[var(--theme-text-muted)] underline hover:text-[var(--theme-text-correct)]"
+          >
+            {t("auth.backToSignIn")}
+          </button>
+        )}
 
         {mode === "signup" && pendingEmail && (
           <div className="mt-3 space-y-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-xs text-[var(--theme-text-muted)]">

@@ -14,13 +14,17 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   initialized: boolean;
+  recoveryMode: boolean;
 
   setUser: (user: User | null) => void;
+  setRecoveryMode: (on: boolean) => void;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<AuthResult>;
   resendConfirmation: (email: string) => Promise<AuthResult>;
+  sendPasswordReset: (email: string) => Promise<AuthResult>;
+  updatePassword: (newPassword: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -28,14 +32,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
   initialized: false,
+  recoveryMode: false,
 
   setUser: (user) => set({ user }),
+  setRecoveryMode: (on) => set({ recoveryMode: on }),
 
   initialize: async () => {
     const { data } = await supabase.auth.getSession();
     set({ user: data.session?.user ?? null, initialized: true });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        set({ user: session?.user ?? null, recoveryMode: true });
+        return;
+      }
       set({ user: session?.user ?? null });
     });
   },
@@ -90,8 +100,26 @@ export const useAuthStore = create<AuthState>((set) => ({
     return { error: error?.message };
   },
 
+  sendPasswordReset: async (email) => {
+    set({ loading: true });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/?recovery=1`,
+    });
+    set({ loading: false });
+    return { error: error?.message };
+  },
+
+  updatePassword: async (newPassword) => {
+    set({ loading: true });
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    set({ loading: false });
+    if (error) return { error: error.message };
+    set({ recoveryMode: false });
+    return {};
+  },
+
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null });
+    set({ user: null, recoveryMode: false });
   },
 }));
