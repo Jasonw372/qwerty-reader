@@ -37,10 +37,13 @@ export interface TypingStats {
 
 export interface Keystroke {
   timestamp: number;
+  action: "type" | "correction";
   correct: boolean;
   input: string;
   expected: string;
   paragraphIndex: number;
+  charIndex: number;
+  corrected?: boolean;
 }
 
 export interface DictEntry {

@@ -6,6 +6,7 @@ import { playCorrect, playIncorrect, playKeyup, resumeAudio } from "../lib/audio
 
 export function useKeyboard(): void {
   const typeChar = useTypingStore((s) => s.typeChar);
+  const backspace = useTypingStore((s) => s.backspace);
   const reset = useTypingStore((s) => s.reset);
   const isFinished = useTypingStore((s) => s.isFinished);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -21,6 +22,11 @@ export function useKeyboard(): void {
       }
       if (isFinished) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        backspace();
+        return;
+      }
       if (e.key.length !== 1) return;
 
       e.preventDefault();
@@ -52,5 +58,5 @@ export function useKeyboard(): void {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [typeChar, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
+  }, [typeChar, backspace, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
 }

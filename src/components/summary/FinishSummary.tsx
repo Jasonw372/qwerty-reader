@@ -27,7 +27,7 @@ function labelChar(char: string): string {
 function rankErrors(keystrokes: Keystroke[], field: "expected" | "input", limit = 8): ErrorItem[] {
   const counts = new Map<string, number>();
   keystrokes
-    .filter((k) => !k.correct)
+    .filter((k) => k.action === "type" && !k.correct)
     .forEach((k) => {
       const key = labelChar(k[field]);
       counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -43,11 +43,13 @@ function buildHeatmap(keystrokes: Keystroke[]): HeatmapItem[] {
   const total = new Map<string, number>();
   const wrong = new Map<string, number>();
 
-  keystrokes.forEach((k) => {
-    const key = labelChar(k.expected);
-    total.set(key, (total.get(key) ?? 0) + 1);
-    if (!k.correct) wrong.set(key, (wrong.get(key) ?? 0) + 1);
-  });
+  keystrokes
+    .filter((k) => k.action === "type")
+    .forEach((k) => {
+      const key = labelChar(k.expected);
+      total.set(key, (total.get(key) ?? 0) + 1);
+      if (!k.correct) wrong.set(key, (wrong.get(key) ?? 0) + 1);
+    });
 
   return [...wrong.entries()]
     .map(([label, count]) => ({ label, count, total: total.get(label) ?? count }))
@@ -57,7 +59,7 @@ function buildHeatmap(keystrokes: Keystroke[]): HeatmapItem[] {
 
 function buildParagraphPoints(keystrokes: Keystroke[], paragraphCount: number): ParagraphPoint[] {
   return Array.from({ length: paragraphCount }, (_, index) => {
-    const strokes = keystrokes.filter((k) => k.paragraphIndex === index);
+    const strokes = keystrokes.filter((k) => k.action === "type" && k.paragraphIndex === index);
     const first = strokes[0]?.timestamp;
     const last = strokes.at(-1)?.timestamp;
     const correct = strokes.filter((k) => k.correct).length;
@@ -142,7 +144,7 @@ export function FinishSummary() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-medium">错误热力图</h2>
             <span className="text-xs text-[var(--theme-text-pending)]">
-              {keystrokes.filter((k) => !k.correct).length} errors
+              {keystrokes.filter((k) => k.action === "type" && !k.correct).length} errors
             </span>
           </div>
 

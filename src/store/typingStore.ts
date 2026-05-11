@@ -17,6 +17,7 @@ interface TypingState {
 
   loadArticle: (content: string) => void;
   typeChar: (input: string) => void;
+  backspace: () => void;
   reset: () => void;
   tick: () => void;
 }
@@ -68,10 +69,12 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       ...keystrokes,
       {
         timestamp: now,
+        action: "type",
         correct,
         input,
         expected,
         paragraphIndex: activeParagraphIndex,
+        charIndex: cursor,
       },
     ];
 
@@ -125,6 +128,82 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       elapsed,
       isFinished,
       wpm,
+      accuracy: calcAccuracy(newKeystrokes),
+    });
+  },
+
+  backspace() {
+    const { paragraphs, activeParagraphIndex, cursor, keystrokes, startTime } = get();
+    if (paragraphs.length === 0 || !startTime) return;
+
+    const now = Date.now();
+    const targetParagraphIndex = cursor > 0 ? activeParagraphIndex : activeParagraphIndex - 1;
+    if (targetParagraphIndex < 0) return;
+
+    const targetParagraph = paragraphs[targetParagraphIndex];
+    const targetCursor = cursor > 0 ? cursor - 1 : targetParagraph.chars.length - 1;
+    const targetChar = targetParagraph.chars[targetCursor];
+    if (!targetChar || targetChar.status === "pending") return;
+
+    let correctedTypeFound = false;
+    const correctedKeystrokes = [...keystrokes].reverse().map((stroke) => {
+      if (
+        !correctedTypeFound &&
+        stroke.action === "type" &&
+        !stroke.corrected &&
+        stroke.paragraphIndex === targetParagraphIndex &&
+        stroke.charIndex === targetCursor
+      ) {
+        correctedTypeFound = true;
+        return { ...stroke, corrected: true };
+      }
+      return stroke;
+    });
+
+    const orderedKeystrokes = correctedKeystrokes.reverse();
+    const newKeystrokes: Keystroke[] = [
+      ...orderedKeystrokes,
+      {
+        timestamp: now,
+        action: "correction",
+        correct: false,
+        input: "Backspace",
+        expected: targetChar.char,
+        paragraphIndex: targetParagraphIndex,
+        charIndex: targetCursor,
+      },
+    ];
+
+    const finalParagraphs = paragraphs.map((paragraph, paragraphIndex) => {
+      if (paragraphIndex === targetParagraphIndex) {
+        const chars = paragraph.chars.map((char, charIndex) => {
+          if (charIndex === targetCursor) return { ...char, status: "active" as CharStatus };
+          if (cursor > 0 && charIndex === cursor)
+            return { ...char, status: "pending" as CharStatus };
+          return char;
+        });
+        return { ...paragraph, focus: "active" as const, chars };
+      }
+
+      if (cursor === 0 && paragraphIndex === activeParagraphIndex) {
+        const chars = paragraph.chars.map((char, charIndex) =>
+          charIndex === 0 && char.status === "active"
+            ? { ...char, status: "pending" as CharStatus }
+            : char,
+        );
+        return { ...paragraph, focus: "upcoming" as const, chars };
+      }
+
+      return paragraph;
+    });
+
+    set({
+      paragraphs: finalParagraphs,
+      activeParagraphIndex: targetParagraphIndex,
+      cursor: targetCursor,
+      keystrokes: newKeystrokes,
+      isFinished: false,
+      wpm: calcWPM(newKeystrokes, now),
       accuracy: calcAccuracy(newKeystrokes),
     });
   },
