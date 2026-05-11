@@ -112,6 +112,11 @@ const zhCN = {
     errWeakPassword: "密码不满足强度要求",
     errPasswordMismatch: "两次输入的密码不一致",
     orContinueWith: "或继续使用",
+    checkInboxHint: "已向 {{email}} 发送确认邮件,点击邮件中的链接完成注册。",
+    checkSpamHint: "提示:若几分钟内未收到邮件,请检查垃圾邮件/推广分类。",
+    alreadyConfirmed: "已确认,去登录",
+    resendCooldown: "{{seconds}} 秒后可重发",
+    errEmailAlreadyRegistered: "该邮箱已注册,请直接登录或使用其他邮箱",
   },
   typing: {
     areaAria: "打字区域",

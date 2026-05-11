@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Mail, Lock, Loader2, BookOpen, Eye, EyeOff, Check, X } from "lucide-react";
 import { useAuthStore, type OAuthProvider } from "../../store/authStore";
 import { useTranslation } from "react-i18next";
@@ -37,6 +37,13 @@ export function AuthGate({ ready }: AuthGateProps) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   const checks = useMemo(() => checkPassword(password), [password]);
   const emailValid = EMAIL_RE.test(email);
@@ -83,25 +90,34 @@ export function AuthGate({ ready }: AuthGateProps) {
       return;
     }
 
-    const { error: err, needsConfirmation } = await signUp(email, password);
+    const { error: err, needsConfirmation, alreadyRegistered } = await signUp(email, password);
     if (err) {
       setError(err);
+      return;
+    }
+    if (alreadyRegistered) {
+      setError(t("auth.errEmailAlreadyRegistered"));
       return;
     }
     if (needsConfirmation) {
       setPendingEmail(email);
       setNotice(t("auth.confirmEmailSent", { email }));
+      setResendCooldown(60);
       setPassword("");
       setConfirmPassword("");
     }
   }
 
   async function handleResend() {
-    if (!pendingEmail) return;
+    if (!pendingEmail || resendCooldown > 0) return;
     setError(null);
     const { error: err } = await resendConfirmation(pendingEmail);
-    if (err) setError(err);
-    else setNotice(t("auth.confirmEmailResent"));
+    if (err) {
+      setError(err);
+      return;
+    }
+    setNotice(t("auth.confirmEmailResent"));
+    setResendCooldown(60);
   }
 
   async function handleOAuth(provider: OAuthProvider) {
@@ -116,6 +132,7 @@ export function AuthGate({ ready }: AuthGateProps) {
     setError(null);
     setNotice(null);
     setPendingEmail(null);
+    setResendCooldown(0);
     setPassword("");
     setConfirmPassword("");
   }
@@ -216,14 +233,29 @@ export function AuthGate({ ready }: AuthGateProps) {
         </form>
 
         {mode === "signup" && pendingEmail && (
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={loading}
-            className="mt-3 w-full text-center text-xs text-[var(--theme-text-muted)] underline hover:text-[var(--theme-text-correct)] disabled:opacity-50"
-          >
-            {t("auth.resendConfirmation")}
-          </button>
+          <div className="mt-3 space-y-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-xs text-[var(--theme-text-muted)]">
+            <p>{t("auth.checkInboxHint", { email: pendingEmail })}</p>
+            <p className="text-[var(--theme-text-pending)]">{t("auth.checkSpamHint")}</p>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={loading || resendCooldown > 0}
+                className="text-[var(--theme-accent)] underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+              >
+                {resendCooldown > 0
+                  ? t("auth.resendCooldown", { seconds: resendCooldown })
+                  : t("auth.resendConfirmation")}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className="text-[var(--theme-text-muted)] underline hover:text-[var(--theme-text-correct)]"
+              >
+                {t("auth.alreadyConfirmed")}
+              </button>
+            </div>
+          </div>
         )}
 
         <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-[var(--theme-text-muted)]">

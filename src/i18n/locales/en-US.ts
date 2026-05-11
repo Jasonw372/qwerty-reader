@@ -112,6 +112,14 @@ const enUS = {
     errWeakPassword: "Password does not meet strength requirements",
     errPasswordMismatch: "Passwords do not match",
     orContinueWith: "Or continue with",
+    checkInboxHint:
+      "Confirmation email sent to {{email}}. Click the link inside to finish signing up.",
+    checkSpamHint:
+      "Tip: If you don't see it in a few minutes, check your spam / promotions folder.",
+    alreadyConfirmed: "Already confirmed, sign in",
+    resendCooldown: "Resend in {{seconds}}s",
+    errEmailAlreadyRegistered:
+      "This email is already registered. Please sign in or use a different email.",
   },
   typing: {
     areaAria: "Typing area",

@@ -5,6 +5,7 @@ import type { Provider, User } from "@supabase/supabase-js";
 interface AuthResult {
   error?: string;
   needsConfirmation?: boolean;
+  alreadyRegistered?: boolean;
 }
 
 export type OAuthProvider = Extract<Provider, "github" | "google">;
@@ -51,7 +52,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data, error } = await supabase.auth.signUp({ email, password });
     set({ loading: false });
     if (error) return { error: error.message };
-    // 当 Supabase 项目开启 "Confirm email" 时,session 为 null,需要用户去邮箱点确认链接
+
+    // Supabase 的反邮箱枚举行为:已注册邮箱再次 signUp 不会报错,
+    // 但返回的 user.identities 会是空数组。用这个信号判断已注册。
+    const identitiesEmpty = (data.user?.identities?.length ?? 0) === 0;
+    if (identitiesEmpty) {
+      return { alreadyRegistered: true };
+    }
+
+    // 开启 "Confirm email" 时 session 为 null,需要去邮箱点确认链接
     const needsConfirmation = !data.session;
     if (needsConfirmation) {
       // 即便 signUp 返回了 user,也不视为登录;清空本地 session
