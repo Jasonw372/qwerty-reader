@@ -10,7 +10,8 @@ export function Cursor({ visible }: CursorProps) {
 
   const styleMap = {
     line: "w-0.5 h-[1.2em] align-middle -ml-0.5",
-    block: "w-[0.6em] h-[1.2em] align-middle -ml-[0.6em] opacity-40",
+    block:
+      "w-[0.72em] h-[1.18em] align-middle -ml-[0.72em] rounded-[3px] border border-[color-mix(in_srgb,var(--theme-cursor)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-cursor)_26%,transparent)]",
     underline: "w-[0.6em] h-[2px] align-bottom -ml-[0.6em]",
   };
 

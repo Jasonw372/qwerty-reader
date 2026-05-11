@@ -2,10 +2,12 @@ import { useEffect, useRef } from "react";
 import { useTypingStore } from "../../store/typingStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { CharSpan } from "./CharSpan.tsx";
+import { Cursor } from "./Cursor.tsx";
 
 export function TypingStage() {
   const paragraphs = useTypingStore((s) => s.paragraphs);
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
+  const cursor = useTypingStore((s) => s.cursor);
   const viewOffset = useTypingStore((s) => s.viewOffset);
   const shiftViewOffset = useTypingStore((s) => s.shiftViewOffset);
   const fontSize = useSettingsStore((s) => s.fontSize);
@@ -104,7 +106,10 @@ export function TypingStage() {
             }}
           >
             {para.chars.map((c, i) => (
-              <CharSpan key={i} char={c.char} status={c.status} />
+              <span key={i} className="relative">
+                <CharSpan char={c.char} status={c.status} />
+                {paraIndex === activeParagraphIndex && i === cursor && <Cursor visible />}
+              </span>
             ))}
           </p>
         );

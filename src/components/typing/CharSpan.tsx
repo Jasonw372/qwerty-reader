@@ -26,13 +26,7 @@ export const CharSpan = memo(function CharSpan({ char, status }: CharSpanProps) 
   };
 
   const className =
-    status === "correct"
-      ? "animate-pop-in"
-      : status === "incorrect"
-        ? "animate-shake"
-        : status === "active"
-          ? "animate-pulse-glow"
-          : undefined;
+    status === "correct" ? "animate-pop-in" : status === "incorrect" ? "animate-shake" : undefined;
 
   return (
     // key on status forces remount so pop-in replays each time
