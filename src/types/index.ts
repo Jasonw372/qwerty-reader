@@ -2,7 +2,7 @@ export type CharStatus = "pending" | "active" | "correct" | "incorrect";
 
 export type ParagraphFocus = "active" | "done" | "upcoming";
 
-export type Theme = "dark" | "parchment";
+export type Theme = "dark" | "parchment" | "auto";
 
 export type CursorStyle = "line" | "block" | "underline";
 

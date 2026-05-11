@@ -13,6 +13,7 @@ export function SettingsModal() {
   const closeSettings = useSettingsStore((s) => s.closeSettings);
 
   const themes: { key: Theme; label: string }[] = [
+    { key: "auto", label: "跟随系统" },
     { key: "dark", label: "Tokyo Night" },
     { key: "parchment", label: "Parchment" },
   ];

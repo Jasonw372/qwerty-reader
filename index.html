@@ -6,7 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>qwerty-reader</title>
     <script>
-      document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark");
+      const storedTheme = localStorage.getItem("theme");
+      const themeMode =
+        storedTheme === "dark" || storedTheme === "parchment" || storedTheme === "auto"
+          ? storedTheme
+          : "auto";
+      const resolvedTheme =
+        themeMode === "auto"
+          ? window.matchMedia("(prefers-color-scheme: light)").matches
+            ? "parchment"
+            : "dark"
+          : themeMode;
+      document.documentElement.setAttribute("data-theme", resolvedTheme);
+      document.documentElement.setAttribute("data-theme-mode", themeMode);
     </script>
   </head>
   <body>
