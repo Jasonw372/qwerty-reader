@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import type { ParagraphData, CharStatus, Keystroke } from "../types/index.ts";
 import { parseArticle } from "../lib/textParser.ts";
-import { calcWPM, calcAccuracy, calcFinalWPM } from "../lib/wpm.ts";
+import { calcFinalWPM } from "../lib/wpm.ts";
+
+const WPM_WINDOW_MS = 10_000;
 
 interface TypingState {
   paragraphs: ParagraphData[];
@@ -15,6 +17,9 @@ interface TypingState {
 
   wpm: number;
   accuracy: number;
+  effectiveTypeCount: number;
+  correctTypeCount: number;
+  recentCorrectTimestamps: number[];
 
   loadArticle: (content: string) => void;
   clearSession: () => void;
@@ -37,6 +42,9 @@ export const useTypingStore = create<TypingState>((set, get) => ({
   isFinished: false,
   wpm: 0,
   accuracy: 100,
+  effectiveTypeCount: 0,
+  correctTypeCount: 0,
+  recentCorrectTimestamps: [],
 
   loadArticle(content) {
     const parsed = parseArticle(content);
@@ -55,6 +63,9 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       isFinished: false,
       wpm: 0,
       accuracy: 100,
+      effectiveTypeCount: 0,
+      correctTypeCount: 0,
+      recentCorrectTimestamps: [],
     });
   },
 
@@ -70,6 +81,9 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       isFinished: false,
       wpm: 0,
       accuracy: 100,
+      effectiveTypeCount: 0,
+      correctTypeCount: 0,
+      recentCorrectTimestamps: [],
     });
   },
 
@@ -116,7 +130,13 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     let finalParagraphs = updatedParagraphs;
     let isFinished = false;
     let elapsed = get().elapsed;
-    let wpm = calcWPM(newKeystrokes, now);
+    let effectiveTypeCount = get().effectiveTypeCount + 1;
+    let correctTypeCount = get().correctTypeCount + (correct ? 1 : 0);
+    let recentCorrectTimestamps = get().recentCorrectTimestamps;
+    if (correct) recentCorrectTimestamps = [...recentCorrectTimestamps, now];
+    recentCorrectTimestamps = recentCorrectTimestamps.filter((ts) => now - ts <= WPM_WINDOW_MS);
+    let wpm = Math.round((recentCorrectTimestamps.length / 5) * 6);
+    let accuracy = Math.round((correctTypeCount / effectiveTypeCount) * 100);
 
     if (paraFinished) {
       const hasNext = activeParagraphIndex + 1 < paragraphs.length;
@@ -150,7 +170,10 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       elapsed,
       isFinished,
       wpm,
-      accuracy: calcAccuracy(newKeystrokes),
+      accuracy,
+      effectiveTypeCount,
+      correctTypeCount,
+      recentCorrectTimestamps,
     });
   },
 
@@ -168,6 +191,8 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     if (!targetChar || targetChar.status === "pending") return;
 
     let correctedTypeFound = false;
+    let correctedWasCorrect = false;
+    let correctedTimestamp: number | null = null;
     const correctedKeystrokes = [...keystrokes].reverse().map((stroke) => {
       if (
         !correctedTypeFound &&
@@ -177,6 +202,8 @@ export const useTypingStore = create<TypingState>((set, get) => ({
         stroke.charIndex === targetCursor
       ) {
         correctedTypeFound = true;
+        correctedWasCorrect = stroke.correct;
+        correctedTimestamp = stroke.timestamp;
         return { ...stroke, corrected: true };
       }
       return stroke;
@@ -219,6 +246,26 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       return paragraph;
     });
 
+    if (!correctedTypeFound) return;
+
+    let effectiveTypeCount = Math.max(0, get().effectiveTypeCount - 1);
+    let correctTypeCount = Math.max(0, get().correctTypeCount - (correctedWasCorrect ? 1 : 0));
+    let recentCorrectTimestamps = get().recentCorrectTimestamps.filter(
+      (ts) => now - ts <= WPM_WINDOW_MS,
+    );
+    if (correctedWasCorrect && correctedTimestamp !== null) {
+      const idx = recentCorrectTimestamps.indexOf(correctedTimestamp);
+      if (idx !== -1) {
+        recentCorrectTimestamps = [
+          ...recentCorrectTimestamps.slice(0, idx),
+          ...recentCorrectTimestamps.slice(idx + 1),
+        ];
+      }
+    }
+    const wpm = Math.round((recentCorrectTimestamps.length / 5) * 6);
+    const accuracy =
+      effectiveTypeCount === 0 ? 100 : Math.round((correctTypeCount / effectiveTypeCount) * 100);
+
     set({
       paragraphs: finalParagraphs,
       activeParagraphIndex: targetParagraphIndex,
@@ -226,8 +273,11 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       cursor: targetCursor,
       keystrokes: newKeystrokes,
       isFinished: false,
-      wpm: calcWPM(newKeystrokes, now),
-      accuracy: calcAccuracy(newKeystrokes),
+      wpm,
+      accuracy,
+      effectiveTypeCount,
+      correctTypeCount,
+      recentCorrectTimestamps,
     });
   },
 
@@ -257,6 +307,14 @@ export const useTypingStore = create<TypingState>((set, get) => ({
   tick() {
     const { startTime, isFinished } = get();
     if (!startTime || isFinished) return;
-    set({ elapsed: Math.floor((Date.now() - startTime) / 1000) });
+    const now = Date.now();
+    const recentCorrectTimestamps = get().recentCorrectTimestamps.filter(
+      (ts) => now - ts <= WPM_WINDOW_MS,
+    );
+    set({
+      elapsed: Math.floor((now - startTime) / 1000),
+      recentCorrectTimestamps,
+      wpm: Math.round((recentCorrectTimestamps.length / 5) * 6),
+    });
   },
 }));
