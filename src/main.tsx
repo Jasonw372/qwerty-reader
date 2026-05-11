@@ -11,7 +11,10 @@ createRoot(document.getElementById("app")!).render(
 );
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js");
+  void navigator.serviceWorker.getRegistrations().then((regs) => {
+    for (const reg of regs) void reg.unregister();
+  });
+  void caches.keys().then((keys) => {
+    for (const key of keys) void caches.delete(key);
   });
 }
