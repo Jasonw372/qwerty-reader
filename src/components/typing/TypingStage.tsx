@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTypingStore } from "../../store/typingStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { CharSpan } from "./CharSpan.tsx";
@@ -15,6 +15,7 @@ export function TypingStage() {
   const fontSize = useSettingsStore((s) => s.fontSize);
   const wheelAccumRef = useRef(0);
   const paragraphRefs = useRef<Array<HTMLParagraphElement | null>>([]);
+  const [isSmallViewport, setIsSmallViewport] = useState(false);
   const displayParagraphIndex = Math.max(
     0,
     Math.min(paragraphs.length - 1, activeParagraphIndex + viewOffset),
@@ -26,6 +27,14 @@ export function TypingStage() {
       behavior: "smooth",
     });
   }, [displayParagraphIndex]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 768px)");
+    const update = () => setIsSmallViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   function handleWheel(e: React.WheelEvent<HTMLDivElement>): void {
     if (paragraphs.length === 0) return;
@@ -49,6 +58,16 @@ export function TypingStage() {
       style={{ paddingTop: "40vh", paddingBottom: "40vh" }}
       onWheel={handleWheel}
     >
+      {isSmallViewport && (
+        <div className="sticky top-20 z-20 mb-4 flex justify-center">
+          <div className="w-full max-w-3xl rounded-2xl border border-amber-300/60 bg-amber-500/15 px-4 py-3 text-center shadow-[0_0_0_1px_rgba(245,158,11,0.28),0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+            <p className="text-sm font-semibold tracking-wide text-amber-100">
+              {t("typing.deviceNoticeTitle")}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-amber-50">{t("typing.deviceNotice")}</p>
+          </div>
+        </div>
+      )}
       {viewOffset !== 0 && (
         <div className="sticky top-20 z-20 mb-4 flex justify-center">
           <div className="glass-panel rounded-full px-4 py-1.5 text-xs text-[var(--theme-text-pending)]">

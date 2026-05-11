@@ -89,6 +89,8 @@ const zhCN = {
   typing: {
     areaAria: "打字区域",
     browsingNotice: "浏览中，输入将返回当前练习句",
+    deviceNoticeTitle: "注意：当前设备可能不适合打字练习",
+    deviceNotice: "当前设备屏幕较小，建议在支持键盘的大屏设备上练习。",
   },
 } as const;
 

@@ -89,6 +89,9 @@ const enUS = {
   typing: {
     areaAria: "Typing area",
     browsingNotice: "Browsing mode: typing returns to the active practice line",
+    deviceNoticeTitle: "Notice: this device may not be ideal for typing practice",
+    deviceNotice:
+      "This screen is small. For a better experience, practice on a larger keyboard-enabled device.",
   },
 } as const;
 
