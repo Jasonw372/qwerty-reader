@@ -232,12 +232,20 @@ export function AuthGate({ ready }: AuthGateProps) {
           <span className="h-px flex-1 bg-[var(--theme-border)]" />
         </div>
 
-        <OAuthButton
-          disabled={loading}
-          onClick={() => void handleOAuth("github")}
-          label="GitHub"
-          icon={<GithubIcon />}
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <OAuthButton
+            disabled={loading}
+            onClick={() => void handleOAuth("github")}
+            label="GitHub"
+            icon={<GithubIcon />}
+          />
+          <OAuthButton
+            disabled={loading}
+            onClick={() => void handleOAuth("google")}
+            label="Google"
+            icon={<GoogleIcon />}
+          />
+        </div>
 
         <p className="mt-5 text-center text-xs text-[var(--theme-text-muted)]">
           {t("auth.emailOnlyHint")}
@@ -358,6 +366,29 @@ function GithubIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.42c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.3-5.25-1.28-5.25-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.48.11-3.08 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.5 3.18-1.18 3.18-1.18.63 1.6.23 2.78.11 3.08.75.8 1.2 1.84 1.2 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 0-24c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 1 0 44 24c0-1.2-.1-2.4-.4-3.5Z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7Z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44a20 20 0 0 0 13.5-5.2l-6.2-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44Z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.5l6.2 5.3C40.9 35 44 30 44 24c0-1.2-.1-2.4-.4-3.5Z"
+      />
     </svg>
   );
 }
