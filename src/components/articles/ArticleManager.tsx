@@ -12,6 +12,8 @@ export function ArticleManager() {
   const setCurrentArticle = useArticleStore((s) => s.setCurrentArticle);
   const addArticle = useArticleStore((s) => s.addArticle);
   const removeArticle = useArticleStore((s) => s.removeArticle);
+  const restorePresets = useArticleStore((s) => s.restorePresets);
+  const hiddenPresetCount = useArticleStore((s) => s.hiddenPresetIds.size);
   const closeManager = useArticleStore((s) => s.closeManager);
 
   const [tab, setTab] = useState<Tab>("list");
@@ -143,42 +145,53 @@ export function ArticleManager() {
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "list" && (
-            <ul className="flex flex-col gap-2">
-              {articles.map((a) => (
-                <li
-                  key={a.id}
-                  onClick={() => handleSelect(a)}
-                  className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] px-4 py-3 cursor-pointer transition-all hover:-translate-y-0.5 hover:border-[var(--theme-border-strong)]"
-                  style={{
-                    backgroundColor:
-                      a.id === currentArticle?.id ? "var(--theme-hud-bg)" : "transparent",
-                  }}
-                >
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span
-                      className="text-sm truncate"
-                      style={{
-                        color:
-                          a.id === currentArticle?.id
-                            ? "var(--theme-text-correct)"
-                            : "var(--theme-text-pending)",
-                      }}
-                    >
-                      {a.title}
-                    </span>
-                    {a.source && (
-                      <span className="text-xs text-[var(--theme-text-muted)]">{a.source}</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => handleRemove(e, a.id)}
-                    className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
+            <div className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-2">
+                {articles.map((a) => (
+                  <li
+                    key={a.id}
+                    onClick={() => handleSelect(a)}
+                    className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] px-4 py-3 cursor-pointer transition-all hover:-translate-y-0.5 hover:border-[var(--theme-border-strong)]"
+                    style={{
+                      backgroundColor:
+                        a.id === currentArticle?.id ? "var(--theme-hud-bg)" : "transparent",
+                    }}
                   >
-                    {t("articleManager.delete")}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span
+                        className="text-sm truncate"
+                        style={{
+                          color:
+                            a.id === currentArticle?.id
+                              ? "var(--theme-text-correct)"
+                              : "var(--theme-text-pending)",
+                        }}
+                      >
+                        {a.title}
+                      </span>
+                      {a.source && (
+                        <span className="text-xs text-[var(--theme-text-muted)]">{a.source}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => handleRemove(e, a.id)}
+                      className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
+                    >
+                      {t("articleManager.delete")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {hiddenPresetCount > 0 && (
+                <button
+                  onClick={restorePresets}
+                  title={t("articleManager.restorePresetsHint")}
+                  className="soft-button self-start rounded-lg px-3 py-1.5 text-xs cursor-pointer"
+                >
+                  {t("articleManager.restorePresets")} ({hiddenPresetCount})
+                </button>
+              )}
+            </div>
           )}
 
           {tab === "upload" && (

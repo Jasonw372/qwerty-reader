@@ -63,6 +63,8 @@ const enUS = {
     errorTitleRequired: "Please enter a title",
     errorSelectFile: "Please select a file first",
     errorContentRequired: "Please enter content",
+    restorePresets: "Restore Presets",
+    restorePresetsHint: "Show all hidden preset articles",
   },
   dict: {
     closeAria: "Close dictionary panel",

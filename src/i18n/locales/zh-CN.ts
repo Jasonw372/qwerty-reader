@@ -63,6 +63,8 @@ const zhCN = {
     errorTitleRequired: "请输入标题",
     errorSelectFile: "请先选择文件",
     errorContentRequired: "请输入内容",
+    restorePresets: "恢复预设文章",
+    restorePresetsHint: "显示所有已隐藏的预设文章",
   },
   dict: {
     closeAria: "关闭字典面板",
