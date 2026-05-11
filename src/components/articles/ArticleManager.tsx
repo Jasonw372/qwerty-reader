@@ -170,14 +170,12 @@ export function ArticleManager() {
                       <span className="text-xs text-[var(--theme-text-muted)]">{a.source}</span>
                     )}
                   </div>
-                  {a.id !== "sample-1" && (
-                    <button
-                      onClick={(e) => handleRemove(e, a.id)}
-                      className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
-                    >
-                      {t("articleManager.delete")}
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => handleRemove(e, a.id)}
+                    className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
+                  >
+                    {t("articleManager.delete")}
+                  </button>
                 </li>
               ))}
             </ul>

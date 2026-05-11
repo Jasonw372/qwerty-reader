@@ -26,6 +26,7 @@ export interface Article {
   title: string;
   content: string;
   source?: string;
+  category?: string;
 }
 
 export interface TypingStats {

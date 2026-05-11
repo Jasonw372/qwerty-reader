@@ -2,11 +2,10 @@ import { supabase } from "./supabase";
 import { useAuthStore } from "../store/authStore";
 import type { Article, TypingStats, Keystroke } from "../types";
 import type { Database } from "../types/supabase";
+import { isPresetArticle } from "../data/articles";
 
 type DbArticleInsert = Database["public"]["Tables"]["articles"]["Insert"];
 type DbSessionInsert = Database["public"]["Tables"]["typing_sessions"]["Insert"];
-
-const SAMPLE_ID = "sample-1";
 
 function currentUserId(): string | null {
   return useAuthStore.getState().user?.id ?? null;
@@ -15,7 +14,7 @@ function currentUserId(): string | null {
 export async function uploadArticle(article: Article): Promise<{ error?: string }> {
   const userId = currentUserId();
   if (!userId) return {};
-  if (article.id === SAMPLE_ID) return {};
+  if (isPresetArticle(article.id)) return {};
 
   const now = new Date().toISOString();
   const record: DbArticleInsert = {
@@ -68,7 +67,7 @@ export async function fetchArticles(): Promise<Article[]> {
 export async function deleteArticleRemote(id: string): Promise<{ error?: string }> {
   const userId = currentUserId();
   if (!userId) return {};
-  if (id === SAMPLE_ID) return {};
+  if (isPresetArticle(id)) return {};
 
   const { error } = await supabase.from("articles").delete().eq("id", id).eq("user_id", userId);
   return { error: error?.message };
@@ -96,7 +95,8 @@ export async function uploadSession(params: UploadSessionParams): Promise<{ erro
     (k) => k.action === "correction" && !k.correct,
   ).length;
 
-  const articleId = params.articleId && params.articleId !== SAMPLE_ID ? params.articleId : null;
+  const articleId =
+    params.articleId && !isPresetArticle(params.articleId) ? params.articleId : null;
 
   const session: DbSessionInsert = {
     user_id: userId,
