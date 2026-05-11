@@ -7,6 +7,8 @@ import { playCorrect, playIncorrect, playKeyup, resumeAudio } from "../lib/audio
 export function useKeyboard(enabled = true): void {
   const typeChar = useTypingStore((s) => s.typeChar);
   const backspace = useTypingStore((s) => s.backspace);
+  const shiftViewOffset = useTypingStore((s) => s.shiftViewOffset);
+  const resetViewOffset = useTypingStore((s) => s.resetViewOffset);
   const reset = useTypingStore((s) => s.reset);
   const isFinished = useTypingStore((s) => s.isFinished);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -21,16 +23,28 @@ export function useKeyboard(enabled = true): void {
         reset();
         return;
       }
+      if (e.key === "PageUp" || e.key === "ArrowUp") {
+        e.preventDefault();
+        shiftViewOffset(-1);
+        return;
+      }
+      if (e.key === "PageDown" || e.key === "ArrowDown") {
+        e.preventDefault();
+        shiftViewOffset(1);
+        return;
+      }
       if (isFinished) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key === "Backspace") {
         e.preventDefault();
+        resetViewOffset();
         backspace();
         return;
       }
       if (e.key.length !== 1) return;
 
       e.preventDefault();
+      resetViewOffset();
       resumeAudio();
 
       const { paragraphs, activeParagraphIndex, cursor } = useTypingStore.getState();
@@ -60,5 +74,16 @@ export function useKeyboard(enabled = true): void {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [enabled, typeChar, backspace, reset, isFinished, soundEnabled, managerOpen, settingsOpen]);
+  }, [
+    enabled,
+    typeChar,
+    backspace,
+    shiftViewOffset,
+    resetViewOffset,
+    reset,
+    isFinished,
+    soundEnabled,
+    managerOpen,
+    settingsOpen,
+  ]);
 }

@@ -2,6 +2,8 @@ const SHORTCUTS = [
   { key: "Esc", label: "重练" },
   { key: "Ctrl+D", label: "字典" },
   { key: "Tab", label: "文章" },
+  { key: "↑/↓", label: "逐句查看" },
+  { key: "PgUp/PgDn", label: "上下查看" },
 ];
 
 export function ShortcutsBar() {

@@ -6,6 +6,7 @@ import { calcWPM, calcAccuracy, calcFinalWPM } from "../lib/wpm.ts";
 interface TypingState {
   paragraphs: ParagraphData[];
   activeParagraphIndex: number;
+  viewOffset: number;
   cursor: number;
   keystrokes: Keystroke[];
   startTime: number | null;
@@ -19,6 +20,8 @@ interface TypingState {
   clearSession: () => void;
   typeChar: (input: string) => void;
   backspace: () => void;
+  shiftViewOffset: (delta: number) => void;
+  resetViewOffset: () => void;
   reset: () => void;
   tick: () => void;
 }
@@ -26,6 +29,7 @@ interface TypingState {
 export const useTypingStore = create<TypingState>((set, get) => ({
   paragraphs: [],
   activeParagraphIndex: 0,
+  viewOffset: 0,
   cursor: 0,
   keystrokes: [],
   startTime: null,
@@ -43,6 +47,7 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     set({
       paragraphs: parsed,
       activeParagraphIndex: 0,
+      viewOffset: 0,
       cursor: 0,
       keystrokes: [],
       startTime: null,
@@ -57,6 +62,7 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     set({
       paragraphs: [],
       activeParagraphIndex: 0,
+      viewOffset: 0,
       cursor: 0,
       keystrokes: [],
       startTime: null,
@@ -138,6 +144,7 @@ export const useTypingStore = create<TypingState>((set, get) => ({
       paragraphs: finalParagraphs,
       cursor: paraFinished ? 0 : nextCursor,
       activeParagraphIndex: nextParagraphIndex,
+      viewOffset: 0,
       keystrokes: newKeystrokes,
       startTime,
       elapsed,
@@ -215,12 +222,29 @@ export const useTypingStore = create<TypingState>((set, get) => ({
     set({
       paragraphs: finalParagraphs,
       activeParagraphIndex: targetParagraphIndex,
+      viewOffset: 0,
       cursor: targetCursor,
       keystrokes: newKeystrokes,
       isFinished: false,
       wpm: calcWPM(newKeystrokes, now),
       accuracy: calcAccuracy(newKeystrokes),
     });
+  },
+
+  shiftViewOffset(delta) {
+    const { paragraphs, activeParagraphIndex, viewOffset } = get();
+    if (paragraphs.length === 0 || delta === 0) return;
+
+    const minOffset = -activeParagraphIndex;
+    const maxOffset = paragraphs.length - 1 - activeParagraphIndex;
+    const nextOffset = Math.max(minOffset, Math.min(maxOffset, viewOffset + delta));
+    if (nextOffset === viewOffset) return;
+    set({ viewOffset: nextOffset });
+  },
+
+  resetViewOffset() {
+    if (get().viewOffset === 0) return;
+    set({ viewOffset: 0 });
   },
 
   reset() {

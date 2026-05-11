@@ -6,12 +6,36 @@ import { CharSpan } from "./CharSpan.tsx";
 export function TypingStage() {
   const paragraphs = useTypingStore((s) => s.paragraphs);
   const activeParagraphIndex = useTypingStore((s) => s.activeParagraphIndex);
+  const viewOffset = useTypingStore((s) => s.viewOffset);
+  const shiftViewOffset = useTypingStore((s) => s.shiftViewOffset);
   const fontSize = useSettingsStore((s) => s.fontSize);
-  const activeRef = useRef<HTMLParagraphElement>(null);
+  const wheelAccumRef = useRef(0);
+  const paragraphRefs = useRef<Array<HTMLParagraphElement | null>>([]);
+  const displayParagraphIndex = Math.max(
+    0,
+    Math.min(paragraphs.length - 1, activeParagraphIndex + viewOffset),
+  );
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [activeParagraphIndex]);
+    paragraphRefs.current[displayParagraphIndex]?.scrollIntoView({
+      block: "center",
+      behavior: "smooth",
+    });
+  }, [displayParagraphIndex]);
+
+  function handleWheel(e: React.WheelEvent<HTMLDivElement>): void {
+    if (paragraphs.length === 0) return;
+    if (Math.abs(e.deltaY) < 0.5) return;
+    e.preventDefault();
+
+    wheelAccumRef.current += e.deltaY;
+    const threshold = 60;
+    if (Math.abs(wheelAccumRef.current) < threshold) return;
+
+    const steps = Math.trunc(wheelAccumRef.current / threshold);
+    wheelAccumRef.current -= steps * threshold;
+    shiftViewOffset(steps);
+  }
 
   return (
     <div
@@ -19,29 +43,64 @@ export function TypingStage() {
       role="main"
       aria-label="Typing area"
       style={{ paddingTop: "40vh", paddingBottom: "40vh" }}
+      onWheel={handleWheel}
     >
+      {viewOffset !== 0 && (
+        <div className="sticky top-20 z-20 mb-4 flex justify-center">
+          <div className="glass-panel rounded-full px-4 py-1.5 text-xs text-[var(--theme-text-pending)]">
+            浏览中，输入将返回当前练习句
+          </div>
+        </div>
+      )}
       {paragraphs.map((para, paraIndex) => {
-        const distance = paraIndex - activeParagraphIndex;
-        const opacity = distance === 0 ? 1 : distance === -1 || distance === 1 ? 0.25 : 0.08;
-        const blur = distance === 0 ? 0 : Math.abs(distance) === 1 ? 1 : 2;
+        const focusDistance = paraIndex - activeParagraphIndex;
+        const viewDistance = paraIndex - displayParagraphIndex;
+        const viewing = viewOffset !== 0;
+        const isViewCenter = viewDistance === 0;
+        const isActive = focusDistance === 0;
+        const opacity = viewing
+          ? isViewCenter
+            ? 0.98
+            : Math.abs(viewDistance) === 1
+              ? 0.34
+              : 0.12
+          : isActive
+            ? 1
+            : Math.abs(focusDistance) === 1
+              ? 0.25
+              : 0.08;
+        const blur = viewing
+          ? isViewCenter
+            ? 0
+            : Math.abs(viewDistance) === 1
+              ? 1
+              : 2
+          : isActive
+            ? 0
+            : Math.abs(focusDistance) === 1
+              ? 1
+              : 2;
 
         return (
           <p
             key={para.id}
-            ref={paraIndex === activeParagraphIndex ? activeRef : null}
+            ref={(el) => {
+              paragraphRefs.current[paraIndex] = el;
+            }}
             className={`mb-14 rounded-2xl font-mono leading-loose transition-all duration-500 md:mb-16 ${
-              distance === 0 ? "glass-panel px-5 py-6 md:px-8 md:py-7" : "px-5 py-3 md:px-8"
+              isActive ? "glass-panel px-5 py-6 md:px-8 md:py-7" : "px-5 py-3 md:px-8"
             }`}
             style={{
               fontSize: `${fontSize}px`,
               letterSpacing: "0.02em",
               opacity,
               filter: `blur(${blur}px)`,
-              boxShadow:
-                distance === 0
-                  ? "inset 0 1px 0 color-mix(in srgb, var(--theme-text-correct) 14%, transparent), 0 28px 90px var(--theme-shadow)"
+              boxShadow: isActive
+                ? "inset 0 1px 0 color-mix(in srgb, var(--theme-text-correct) 14%, transparent), 0 28px 90px var(--theme-shadow)"
+                : viewing && isViewCenter
+                  ? "inset 0 1px 0 color-mix(in srgb, var(--theme-cursor) 18%, transparent)"
                   : undefined,
-              pointerEvents: distance === 0 ? "auto" : "none",
+              pointerEvents: isActive ? "auto" : "none",
             }}
           >
             {para.chars.map((c, i) => (
