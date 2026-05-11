@@ -16,10 +16,14 @@ export function TypingStage() {
   const wheelAccumRef = useRef(0);
   const paragraphRefs = useRef<Array<HTMLParagraphElement | null>>([]);
   const [isSmallViewport, setIsSmallViewport] = useState(false);
+  const RENDER_WINDOW_RADIUS = 6;
   const displayParagraphIndex = Math.max(
     0,
     Math.min(paragraphs.length - 1, activeParagraphIndex + viewOffset),
   );
+  const renderStart = Math.max(0, displayParagraphIndex - RENDER_WINDOW_RADIUS);
+  const renderEnd = Math.min(paragraphs.length, displayParagraphIndex + RENDER_WINDOW_RADIUS + 1);
+  const visibleParagraphs = paragraphs.slice(renderStart, renderEnd);
 
   useEffect(() => {
     paragraphRefs.current[displayParagraphIndex]?.scrollIntoView({
@@ -75,7 +79,8 @@ export function TypingStage() {
           </div>
         </div>
       )}
-      {paragraphs.map((para, paraIndex) => {
+      {visibleParagraphs.map((para, relativeIndex) => {
+        const paraIndex = renderStart + relativeIndex;
         const focusDistance = paraIndex - activeParagraphIndex;
         const viewDistance = paraIndex - displayParagraphIndex;
         const viewing = viewOffset !== 0;
