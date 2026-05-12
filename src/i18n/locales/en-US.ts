@@ -18,6 +18,8 @@ const enUS = {
     fontSize: "Font Size",
     sound: "Sound",
     soundToggleAria: "Toggle sound",
+    showSpaceSymbol: "Show Space Symbol",
+    showSpaceSymbolToggleAria: "Toggle space symbol visibility",
     cursorStyle: "Cursor Style",
     cursorLine: "Line",
     cursorBlock: "Block",

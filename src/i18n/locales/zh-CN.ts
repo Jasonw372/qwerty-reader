@@ -18,6 +18,8 @@ const zhCN = {
     fontSize: "字体大小",
     sound: "音效",
     soundToggleAria: "切换音效",
+    showSpaceSymbol: "显示空格符号",
+    showSpaceSymbolToggleAria: "切换空格符号显示",
     cursorStyle: "光标样式",
     cursorLine: "竖线",
     cursorBlock: "块状",

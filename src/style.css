@@ -97,6 +97,11 @@ button {
 }
 
 @layer components {
+  .space-symbol {
+    font-family:
+      "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", "Arial Unicode MS", sans-serif;
+  }
+
   .app-shell {
     position: relative;
     isolation: isolate;

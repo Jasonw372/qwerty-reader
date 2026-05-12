@@ -12,6 +12,8 @@ export function SettingsModal() {
   const setFontSize = useSettingsStore((s) => s.setFontSize);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
+  const showSpaceSymbol = useSettingsStore((s) => s.showSpaceSymbol);
+  const toggleSpaceSymbol = useSettingsStore((s) => s.toggleSpaceSymbol);
   const cursorStyle = useSettingsStore((s) => s.cursorStyle);
   const setCursorStyle = useSettingsStore((s) => s.setCursorStyle);
   const closeSettings = useSettingsStore((s) => s.closeSettings);
@@ -134,6 +136,29 @@ export function SettingsModal() {
               <span
                 className={`absolute top-0.5 size-5 rounded-full transition-all ${
                   soundEnabled
+                    ? "left-[calc(100%-1.375rem)] bg-[var(--theme-text-correct)]"
+                    : "left-0.5 bg-[var(--theme-text-muted)]"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-[var(--theme-text-muted)]">
+              {t("settings.showSpaceSymbol")}
+            </label>
+            <button
+              onClick={toggleSpaceSymbol}
+              className={`relative h-6 w-12 rounded-full border transition-colors cursor-pointer ${
+                showSpaceSymbol
+                  ? "border-[var(--theme-text-correct)] bg-[var(--theme-text-correct)]/20"
+                  : "border-[var(--theme-border)] bg-transparent"
+              }`}
+              aria-label={t("settings.showSpaceSymbolToggleAria")}
+            >
+              <span
+                className={`absolute top-0.5 size-5 rounded-full transition-all ${
+                  showSpaceSymbol
                     ? "left-[calc(100%-1.375rem)] bg-[var(--theme-text-correct)]"
                     : "left-0.5 bg-[var(--theme-text-muted)]"
                 }`}

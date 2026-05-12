@@ -27,6 +27,7 @@ interface SettingsState {
   locale: Locale;
   fontSize: number;
   soundEnabled: boolean;
+  showSpaceSymbol: boolean;
   cursorStyle: CursorStyle;
   settingsOpen: boolean;
   setTheme: (theme: Theme) => void;
@@ -34,6 +35,7 @@ interface SettingsState {
   setFontSize: (size: number) => void;
   toggleSound: () => void;
   setCursorStyle: (style: CursorStyle) => void;
+  toggleSpaceSymbol: () => void;
   openSettings: () => void;
   closeSettings: () => void;
 }
@@ -51,6 +53,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   locale: initialLocale,
   fontSize: Number(localStorage.getItem("fontSize")) || 30,
   soundEnabled: localStorage.getItem("sound") !== "off",
+  showSpaceSymbol: localStorage.getItem("showSpaceSymbol") !== "off",
   cursorStyle: (localStorage.getItem("cursorStyle") as CursorStyle) ?? "line",
   settingsOpen: false,
 
@@ -83,6 +86,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setCursorStyle(cursorStyle) {
     localStorage.setItem("cursorStyle", cursorStyle);
     set({ cursorStyle });
+  },
+
+  toggleSpaceSymbol() {
+    set((state) => {
+      const next = !state.showSpaceSymbol;
+      localStorage.setItem("showSpaceSymbol", next ? "on" : "off");
+      return { showSpaceSymbol: next };
+    });
   },
 
   openSettings() {
