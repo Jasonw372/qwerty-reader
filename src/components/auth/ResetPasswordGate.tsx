@@ -54,23 +54,17 @@ export function ResetPasswordGate() {
   }
 
   return (
-    <div
-      className="flex h-screen items-center justify-center px-4"
-      style={{ backgroundColor: "var(--theme-bg)" }}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl border border-[var(--theme-border)] p-6 shadow-xl"
-        style={{ backgroundColor: "var(--theme-surface-elevated)" }}
-      >
-        <div className="mb-6 flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]">
-            <BookOpen size={20} />
+    <div className="app-shell flex min-h-screen items-center justify-center px-4">
+      <div className="glass-panel animate-float-in w-full max-w-sm rounded-2xl p-8">
+        <div className="mb-7 flex items-center gap-4">
+          <div className="grid size-12 place-items-center rounded-2xl bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] shadow">
+            <BookOpen size={22} />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-[var(--theme-text-correct)]">
+            <h1 className="text-lg font-semibold text-[var(--theme-text-correct)]">
               {t("auth.resetPasswordTitle")}
             </h1>
-            <p className="text-xs text-[var(--theme-text-muted)]">
+            <p className="text-xs tracking-wide text-[var(--theme-text-muted)]">
               {user?.email ?? t("auth.resetPasswordSubtitle")}
             </p>
           </div>
@@ -84,7 +78,7 @@ export function ResetPasswordGate() {
             <button
               type="button"
               onClick={() => void signOut()}
-              className="w-full rounded-lg bg-[var(--theme-accent)] py-2 font-medium text-[var(--theme-bg)] transition-colors hover:opacity-90"
+              className="primary-button w-full rounded-lg py-2.5 font-medium"
             >
               {t("auth.signInAgain")}
             </button>
@@ -105,7 +99,7 @@ export function ResetPasswordGate() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] py-2 pl-9 pr-9 text-sm text-[var(--theme-text-correct)] focus:border-[var(--theme-accent)] focus:outline-none"
+                  className="field w-full rounded-lg py-2 pl-9 pr-9 text-sm focus:outline-none"
                 />
                 <button
                   type="button"
@@ -119,7 +113,7 @@ export function ResetPasswordGate() {
             </div>
 
             {password.length > 0 && (
-              <ul className="space-y-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 text-xs">
+              <ul className="space-y-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs">
                 <Rule ok={checks.length} label={t("auth.ruleLength")} />
                 <Rule ok={checks.letter} label={t("auth.ruleLetter")} />
                 <Rule ok={checks.number} label={t("auth.ruleNumber")} />
@@ -141,10 +135,8 @@ export function ResetPasswordGate() {
                   placeholder="••••••••"
                   required
                   className={
-                    "w-full rounded-lg border bg-[var(--theme-bg)] py-2 pl-9 pr-3 text-sm text-[var(--theme-text-correct)] focus:outline-none " +
-                    (confirm.length > 0 && !match
-                      ? "border-red-500/70 focus:border-red-500"
-                      : "border-[var(--theme-border)] focus:border-[var(--theme-accent)]")
+                    "field w-full rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none " +
+                    (confirm.length > 0 && !match ? "border-red-500/70 focus:border-red-500" : "")
                   }
                 />
               </div>
@@ -158,7 +150,7 @@ export function ResetPasswordGate() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-accent)] py-2 font-medium text-[var(--theme-bg)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="primary-button flex w-full items-center justify-center gap-2 rounded-lg py-2.5 font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {t("auth.updatePassword")}

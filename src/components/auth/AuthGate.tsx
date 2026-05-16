@@ -156,27 +156,23 @@ export function AuthGate({ ready }: AuthGateProps) {
   }
 
   return (
-    <div
-      className="flex h-screen items-center justify-center px-4"
-      style={{ backgroundColor: "var(--theme-bg)" }}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl border border-[var(--theme-border)] p-6 shadow-xl"
-        style={{ backgroundColor: "var(--theme-surface-elevated)" }}
-      >
-        <div className="mb-6 flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]">
-            <BookOpen size={20} />
+    <div className="app-shell flex min-h-screen items-center justify-center px-4">
+      <div className="glass-panel animate-float-in w-full max-w-sm rounded-2xl p-8">
+        <div className="mb-7 flex items-center gap-4">
+          <div className="grid size-12 place-items-center rounded-2xl bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] shadow">
+            <BookOpen size={22} />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-[var(--theme-text-correct)]">
+            <h1 className="text-lg font-semibold text-[var(--theme-text-correct)]">
               Qwerty Reader
             </h1>
-            <p className="text-xs text-[var(--theme-text-muted)]">{t("auth.gateSubtitle")}</p>
+            <p className="text-xs tracking-wide text-[var(--theme-text-muted)]">
+              {t("auth.gateSubtitle")}
+            </p>
           </div>
         </div>
 
-        <div className="mb-5 flex gap-2">
+        <div className="mb-6 flex border-b border-[var(--theme-border)]">
           <TabButton active={mode === "login"} onClick={() => switchMode("login")}>
             {t("auth.signIn")}
           </TabButton>
@@ -230,7 +226,7 @@ export function AuthGate({ ready }: AuthGateProps) {
             </div>
           )}
           {mode === "signup" && password.length > 0 && (
-            <ul className="space-y-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 text-xs">
+            <ul className="space-y-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs">
               <Rule ok={checks.length} label={t("auth.ruleLength")} />
               <Rule ok={checks.letter} label={t("auth.ruleLetter")} />
               <Rule ok={checks.number} label={t("auth.ruleNumber")} />
@@ -256,7 +252,7 @@ export function AuthGate({ ready }: AuthGateProps) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-accent)] py-2 font-medium text-[var(--theme-bg)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="primary-button flex w-full items-center justify-center gap-2 rounded-lg py-2.5 font-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
             {mode === "login"
@@ -278,7 +274,7 @@ export function AuthGate({ ready }: AuthGateProps) {
         )}
 
         {mode === "signup" && pendingEmail && (
-          <div className="mt-3 space-y-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-3 text-xs text-[var(--theme-text-muted)]">
+          <div className="mt-3 space-y-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs text-[var(--theme-text-muted)]">
             <p>{t("auth.checkInboxHint", { email: pendingEmail })}</p>
             <p className="text-[var(--theme-text-pending)]">{t("auth.checkSpamHint")}</p>
             <div className="flex items-center justify-between gap-2 pt-1">
@@ -344,10 +340,10 @@ function TabButton({ active, onClick, children }: TabButtonProps) {
       type="button"
       onClick={onClick}
       className={
-        "flex-1 rounded-lg py-2 text-sm transition-colors " +
+        "flex-1 pb-2.5 text-sm font-medium transition-colors " +
         (active
-          ? "bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]"
-          : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-border)]/40")
+          ? "-mb-px border-b-2 border-[var(--theme-accent)] text-[var(--theme-accent)]"
+          : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text-correct)]")
       }
     >
       {children}
@@ -392,10 +388,8 @@ function Field({
           placeholder={placeholder}
           required
           className={
-            "w-full rounded-lg border bg-[var(--theme-bg)] py-2 pl-9 pr-9 text-sm text-[var(--theme-text-correct)] focus:outline-none " +
-            (invalid
-              ? "border-red-500/70 focus:border-red-500"
-              : "border-[var(--theme-border)] focus:border-[var(--theme-accent)]")
+            "field w-full rounded-lg py-2 pl-9 pr-9 text-sm focus:outline-none " +
+            (invalid ? "border-red-500/70 focus:border-red-500" : "")
           }
         />
         {trailing && <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</span>}
@@ -431,7 +425,7 @@ function OAuthButton({ disabled, onClick, label, icon }: OAuthButtonProps) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex items-center justify-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm text-[var(--theme-text-correct)] transition-colors hover:bg-[var(--theme-border)]/40 disabled:cursor-not-allowed disabled:opacity-50"
+      className="soft-button flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
     >
       {icon}
       <span>{label}</span>
