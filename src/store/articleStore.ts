@@ -42,6 +42,33 @@ function persistHidden(hidden: ReadonlySet<string>): void {
 const initialArticles = visiblePresets(new Set());
 const initialCurrent = initialArticles[0] ?? null;
 
+function createArticleId(): string {
+  return crypto.randomUUID();
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function normalizeUserArticleIds(
+  articles: Article[],
+  currentId?: string | null,
+): { articles: Article[]; currentId?: string | null; changed: boolean } {
+  const idMap = new Map<string, string>();
+  const normalized = articles.map((article) => {
+    if (PRESET_IDS.has(article.id) || isUuid(article.id)) return article;
+    const nextId = createArticleId();
+    idMap.set(article.id, nextId);
+    return { ...article, id: nextId };
+  });
+
+  return {
+    articles: normalized,
+    currentId: currentId && idMap.has(currentId) ? idMap.get(currentId) : currentId,
+    changed: idMap.size > 0,
+  };
+}
+
 export const useArticleStore = create<ArticleState>((set, get) => ({
   articles: initialArticles,
   currentArticle: initialCurrent,
@@ -114,10 +141,18 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
       idbGet<string[]>(IDB_HIDDEN_PRESETS_KEY),
     ]);
     const hiddenPresetIds = new Set(hiddenArr ?? []);
-    const userArticles = stored ?? [];
+    const normalized = normalizeUserArticleIds(stored ?? [], currentId);
+    const userArticles = normalized.articles;
     const articles = [...visiblePresets(hiddenPresetIds), ...userArticles];
     const currentArticle =
-      articles.find((a) => a.id === currentId) ?? get().currentArticle ?? articles[0] ?? null;
+      articles.find((a) => a.id === normalized.currentId) ??
+      get().currentArticle ??
+      articles[0] ??
+      null;
+    if (normalized.changed) {
+      persistUserArticles(articles);
+      if (currentArticle) void idbSet(IDB_CURRENT_KEY, currentArticle.id);
+    }
     set({ articles, currentArticle, hiddenPresetIds });
   },
 

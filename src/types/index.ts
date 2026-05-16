@@ -38,6 +38,20 @@ export interface TypingStats {
   errorChars: number;
 }
 
+export interface TypingSession {
+  id: string;
+  articleId: string | null;
+  wpm: number;
+  accuracy: number;
+  durationSeconds: number;
+  totalChars: number;
+  correctChars: number;
+  incorrectChars: number;
+  backspaceCount: number;
+  errorHeatmap: Record<string, number>;
+  createdAt: string;
+}
+
 export interface Keystroke {
   timestamp: number;
   action: "type" | "correction";

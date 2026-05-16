@@ -59,7 +59,7 @@ export function ArticleManager() {
       return;
     }
     const article: Article = {
-      id: `file-${Date.now()}`,
+      id: crypto.randomUUID(),
       title: uploadTitle.trim(),
       content: uploadContent,
       source: "upload",
@@ -82,7 +82,7 @@ export function ArticleManager() {
       return;
     }
     const article: Article = {
-      id: `manual-${Date.now()}`,
+      id: crypto.randomUUID(),
       title: title.trim(),
       content: content.trim(),
       source: "manual",

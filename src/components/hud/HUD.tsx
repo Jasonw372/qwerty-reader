@@ -2,15 +2,16 @@ import { useTypingStore } from "../../store/typingStore.ts";
 import { useArticleStore } from "../../store/articleStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
-import { Settings } from "lucide-react";
+import { BarChart3, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserMenu } from "../auth/UserMenu.tsx";
 
 interface HUDProps {
   onOpenReading?: () => void;
+  onOpenHistory?: () => void;
 }
 
-export function HUD({ onOpenReading }: HUDProps) {
+export function HUD({ onOpenReading, onOpenHistory }: HUDProps) {
   const { t } = useTranslation();
   const wpm = useTypingStore((s) => s.wpm);
   const accuracy = useTypingStore((s) => s.accuracy);
@@ -77,6 +78,17 @@ export function HUD({ onOpenReading }: HUDProps) {
           )}
 
           <UserMenu />
+
+          {onOpenHistory && (
+            <button
+              onClick={onOpenHistory}
+              title={t("hud.history")}
+              className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
+              aria-label={t("hud.historyAria")}
+            >
+              <BarChart3 size={20} />
+            </button>
+          )}
 
           <button
             onClick={openSettings}

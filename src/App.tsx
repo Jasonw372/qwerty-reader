@@ -7,6 +7,7 @@ import { DictPanel } from "./components/dict/DictPanel.tsx";
 import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
 import { SettingsModal } from "./components/settings/SettingsModal.tsx";
+import { HistoryModal } from "./components/history/HistoryModal.tsx";
 import { AuthGate } from "./components/auth/AuthGate.tsx";
 import { ResetPasswordGate } from "./components/auth/ResetPasswordGate.tsx";
 import { useKeyboard } from "./hooks/useKeyboard.ts";
@@ -32,6 +33,7 @@ export function App() {
   const isFinished = useTypingStore((s) => s.isFinished);
   const { entry, loading, error, lookup, clear } = useDict();
   const [phase, setPhase] = useState<PracticePhase>("typing");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
@@ -129,7 +131,10 @@ export function App() {
       className="app-shell flex h-screen flex-col"
       style={{ backgroundColor: "var(--theme-bg)" }}
     >
-      <HUD onOpenReading={currentArticle ? () => setPhase("reading") : undefined} />
+      <HUD
+        onOpenReading={currentArticle ? () => setPhase("reading") : undefined}
+        onOpenHistory={() => setHistoryOpen(true)}
+      />
       <main className="flex-1 overflow-y-auto pb-10">
         {currentArticle && phase === "reading" && (
           <ReadingPreview
@@ -145,6 +150,7 @@ export function App() {
       <ShortcutsBar />
       {managerOpen && <ArticleManager />}
       {settingsOpen && <SettingsModal />}
+      {historyOpen && <HistoryModal onClose={() => setHistoryOpen(false)} />}
     </div>
   );
 }

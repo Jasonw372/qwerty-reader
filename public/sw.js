@@ -1,7 +1,7 @@
 // Kill-switch service worker.
 // Existing installs will update to this version, which unregisters itself
 // and clears all caches so users get the fresh site on the next navigation.
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
