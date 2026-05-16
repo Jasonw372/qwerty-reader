@@ -8,6 +8,7 @@ import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
 import { ArticleManager } from "./components/articles/ArticleManager.tsx";
 import { SettingsModal } from "./components/settings/SettingsModal.tsx";
 import { HistoryModal } from "./components/history/HistoryModal.tsx";
+import { ReviewQueueModal } from "./components/admin/ReviewQueueModal.tsx";
 import { AuthGate } from "./components/auth/AuthGate.tsx";
 import { ResetPasswordGate } from "./components/auth/ResetPasswordGate.tsx";
 import { useKeyboard } from "./hooks/useKeyboard.ts";
@@ -17,7 +18,7 @@ import { useTypingStore } from "./store/typingStore.ts";
 import { useArticleStore } from "./store/articleStore.ts";
 import { useSettingsStore } from "./store/settingsStore.ts";
 import { useAuthStore } from "./store/authStore.ts";
-import { uploadSession } from "./lib/sync.ts";
+import { currentUserIsAdmin, uploadSession } from "./lib/sync.ts";
 
 type PracticePhase = "reading" | "typing";
 
@@ -34,6 +35,7 @@ export function App() {
   const { entry, loading, error, lookup, clear } = useDict();
   const [phase, setPhase] = useState<PracticePhase>("typing");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
@@ -134,6 +136,7 @@ export function App() {
       <HUD
         onOpenReading={currentArticle ? () => setPhase("reading") : undefined}
         onOpenHistory={() => setHistoryOpen(true)}
+        onOpenReview={currentUserIsAdmin() ? () => setReviewOpen(true) : undefined}
       />
       <main className="flex-1 overflow-y-auto pb-10">
         {currentArticle && phase === "reading" && (
@@ -151,6 +154,7 @@ export function App() {
       {managerOpen && <ArticleManager />}
       {settingsOpen && <SettingsModal />}
       {historyOpen && <HistoryModal onClose={() => setHistoryOpen(false)} />}
+      {reviewOpen && <ReviewQueueModal onClose={() => setReviewOpen(false)} />}
     </div>
   );
 }

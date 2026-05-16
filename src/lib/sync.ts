@@ -5,11 +5,30 @@ import type { Database } from "../types/supabase";
 import { isPresetArticle } from "../data/articles";
 
 type DbArticleInsert = Database["public"]["Tables"]["articles"]["Insert"];
+type DbArticleRow = Database["public"]["Tables"]["articles"]["Row"];
 type DbSessionInsert = Database["public"]["Tables"]["typing_sessions"]["Insert"];
 type DbSessionRow = Database["public"]["Tables"]["typing_sessions"]["Row"];
 
 function currentUserId(): string | null {
   return useAuthStore.getState().user?.id ?? null;
+}
+
+export function currentUserIsAdmin(): boolean {
+  const user = useAuthStore.getState().user;
+  return user?.app_metadata?.role === "admin" || user?.user_metadata?.role === "admin";
+}
+
+function mapArticle(
+  row: Pick<DbArticleRow, "id" | "title" | "content" | "source" | "is_public" | "review_status">,
+): Article {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    source: row.source ?? undefined,
+    isPublic: row.is_public,
+    reviewStatus: row.review_status,
+  };
 }
 
 export async function uploadArticle(article: Article): Promise<{ error?: string }> {
@@ -25,8 +44,13 @@ export async function uploadArticle(article: Article): Promise<{ error?: string 
     content: article.content,
     source: article.source ?? null,
     language: "en-US",
-    is_public: false,
+    is_public: article.reviewStatus === "approved",
+    review_status: article.reviewStatus ?? "private",
     tags: null,
+    submitted_at: article.reviewStatus === "pending" ? now : null,
+    reviewed_at: null,
+    reviewed_by: null,
+    rejection_reason: null,
     created_at: now,
     updated_at: now,
   };
@@ -42,27 +66,13 @@ export async function fetchArticles(): Promise<Article[]> {
   if (!userId) return [];
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, content, source")
+    .select("id, title, content, source, is_public, review_status")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  return (
-    (data ?? []) as Array<{
-      id: string;
-      title: string;
-      content: string;
-      source: string | null;
-    }>
-  ).map(
-    (a): Article => ({
-      id: a.id,
-      title: a.title,
-      content: a.content,
-      source: a.source ?? undefined,
-    }),
-  );
+  return ((data ?? []) as DbArticleRow[]).map(mapArticle);
 }
 
 export async function deleteArticleRemote(id: string): Promise<{ error?: string }> {
@@ -71,6 +81,51 @@ export async function deleteArticleRemote(id: string): Promise<{ error?: string 
   if (isPresetArticle(id)) return {};
 
   const { error } = await supabase.from("articles").delete().eq("id", id).eq("user_id", userId);
+  return { error: error?.message };
+}
+
+export async function fetchPublicArticles(): Promise<Article[]> {
+  const { data, error } = await supabase
+    .from("articles")
+    .select("id, title, content, source, is_public, review_status")
+    .eq("is_public", true)
+    .eq("review_status", "approved")
+    .order("updated_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as DbArticleRow[]).map(mapArticle);
+}
+
+export async function fetchPendingPublicArticles(): Promise<Article[]> {
+  if (!currentUserIsAdmin()) return [];
+  const { data, error } = await supabase
+    .from("articles")
+    .select("id, title, content, source, is_public, review_status")
+    .eq("review_status", "pending")
+    .order("submitted_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as DbArticleRow[]).map(mapArticle);
+}
+
+export async function reviewPublicArticle(
+  id: string,
+  decision: "approved" | "rejected",
+): Promise<{ error?: string }> {
+  const userId = currentUserId();
+  if (!userId || !currentUserIsAdmin()) return { error: "Admin permission required" };
+
+  const now = new Date().toISOString();
+  const update = {
+    is_public: decision === "approved",
+    review_status: decision,
+    reviewed_at: now,
+    reviewed_by: userId,
+    updated_at: now,
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("articles") as any).update(update).eq("id", id);
+
   return { error: error?.message };
 }
 

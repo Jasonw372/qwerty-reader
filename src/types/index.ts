@@ -27,7 +27,11 @@ export interface Article {
   content: string;
   source?: string;
   category?: string;
+  isPublic?: boolean;
+  reviewStatus?: ArticleReviewStatus;
 }
+
+export type ArticleReviewStatus = "private" | "pending" | "approved" | "rejected";
 
 export interface TypingStats {
   wpm: number;

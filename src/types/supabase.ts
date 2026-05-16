@@ -38,7 +38,12 @@ export interface Database {
           source: string | null;
           language: string;
           is_public: boolean;
+          review_status: "private" | "pending" | "approved" | "rejected";
           tags: string[] | null;
+          submitted_at: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          rejection_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -50,7 +55,12 @@ export interface Database {
           source?: string | null;
           language?: string;
           is_public?: boolean;
+          review_status?: "private" | "pending" | "approved" | "rejected";
           tags?: string[] | null;
+          submitted_at?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          rejection_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -62,7 +72,12 @@ export interface Database {
           source?: string | null;
           language?: string;
           is_public?: boolean;
+          review_status?: "private" | "pending" | "approved" | "rejected";
           tags?: string[] | null;
+          submitted_at?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          rejection_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };

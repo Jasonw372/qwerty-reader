@@ -2,16 +2,17 @@ import { useTypingStore } from "../../store/typingStore.ts";
 import { useArticleStore } from "../../store/articleStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
-import { BarChart3, Settings } from "lucide-react";
+import { BarChart3, ClipboardCheck, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserMenu } from "../auth/UserMenu.tsx";
 
 interface HUDProps {
   onOpenReading?: () => void;
   onOpenHistory?: () => void;
+  onOpenReview?: () => void;
 }
 
-export function HUD({ onOpenReading, onOpenHistory }: HUDProps) {
+export function HUD({ onOpenReading, onOpenHistory, onOpenReview }: HUDProps) {
   const { t } = useTranslation();
   const wpm = useTypingStore((s) => s.wpm);
   const accuracy = useTypingStore((s) => s.accuracy);
@@ -87,6 +88,17 @@ export function HUD({ onOpenReading, onOpenHistory }: HUDProps) {
               aria-label={t("hud.historyAria")}
             >
               <BarChart3 size={20} />
+            </button>
+          )}
+
+          {onOpenReview && (
+            <button
+              onClick={onOpenReview}
+              title={t("hud.review")}
+              className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
+              aria-label={t("hud.reviewAria")}
+            >
+              <ClipboardCheck size={20} />
             </button>
           )}
 
