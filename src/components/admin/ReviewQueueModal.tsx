@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  fetchPendingPublicArticles,
-  fetchPublicArticles,
-  reviewPublicArticle,
-} from "../../lib/sync.ts";
+import { fetchPendingPublicArticles, reviewPublicArticle } from "../../lib/sync.ts";
 import type { Article } from "../../types/index.ts";
 import { ArticlePreviewModal } from "../articles/ArticlePreviewModal.tsx";
 
@@ -16,7 +12,6 @@ interface ReviewQueueModalProps {
 export function ReviewQueueModal({ onClose }: ReviewQueueModalProps) {
   const { t } = useTranslation();
   const [pendingArticles, setPendingArticles] = useState<Article[]>([]);
-  const [approvedArticles, setApprovedArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -26,12 +21,7 @@ export function ReviewQueueModal({ onClose }: ReviewQueueModalProps) {
     setLoading(true);
     setError("");
     try {
-      const [pending, approved] = await Promise.all([
-        fetchPendingPublicArticles(),
-        fetchPublicArticles(),
-      ]);
-      setPendingArticles(pending);
-      setApprovedArticles(approved);
+      setPendingArticles(await fetchPendingPublicArticles());
     } catch (err) {
       setError(err instanceof Error ? err.message : t("review.loadError"));
     } finally {
@@ -62,7 +52,7 @@ export function ReviewQueueModal({ onClose }: ReviewQueueModalProps) {
         onClick={onClose}
       >
         <div
-          className="glass-panel relative flex max-h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl font-mono"
+          className="glass-panel relative flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl font-mono"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
@@ -94,7 +84,7 @@ export function ReviewQueueModal({ onClose }: ReviewQueueModalProps) {
             </div>
           </div>
 
-          <div className="grid flex-1 gap-6 overflow-y-auto px-6 py-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex-1 overflow-y-auto px-6 py-5">
             <section className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs uppercase tracking-[0.16em] text-[var(--theme-text-pending)]">
@@ -132,49 +122,6 @@ export function ReviewQueueModal({ onClose }: ReviewQueueModalProps) {
                 </ul>
               )}
             </section>
-
-            <aside className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs uppercase tracking-[0.16em] text-[var(--theme-text-pending)]">
-                  {t("review.approved")}
-                </h2>
-                <span className="text-xs text-[var(--theme-text-muted)]">
-                  {approvedArticles.length}
-                </span>
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-[var(--theme-border)]">
-                {approvedArticles.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-[var(--theme-text-pending)]">
-                    {loading ? t("review.loading") : t("review.noApproved")}
-                  </p>
-                ) : (
-                  <ol className="max-h-[32rem] overflow-y-auto">
-                    {approvedArticles.map((article) => (
-                      <li
-                        key={article.id}
-                        className="flex items-center justify-between gap-3 border-b border-[var(--theme-border)] px-4 py-3 last:border-b-0"
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-sm text-[var(--theme-text-correct)]">
-                            {article.title}
-                          </div>
-                          <div className="mt-1 text-xs text-[var(--theme-text-muted)]">
-                            {t("articlePreview.chars", { count: article.content.trim().length })}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewArticle(article)}
-                          className="soft-button shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
-                        >
-                          {t("articlePreview.view")}
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            </aside>
           </div>
         </div>
       </div>

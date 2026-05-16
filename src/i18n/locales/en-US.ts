@@ -81,6 +81,8 @@ const enUS = {
     publicLibrary: "Public Articles",
     noPublicArticles: "No public articles yet",
     useArticle: "Use",
+    deletePublicConfirm:
+      "Delete this article from the public library? This action cannot be undone.",
   },
   review: {
     title: "Article Review",
@@ -90,9 +92,7 @@ const enUS = {
     loadError: "Unable to load review data",
     loading: "Loading...",
     pending: "Pending Review",
-    approved: "Public Articles",
     empty: "No articles pending review",
-    noApproved: "No public articles yet",
     approve: "Approve",
     reject: "Reject",
   },

@@ -129,6 +129,18 @@ export async function reviewPublicArticle(
   return { error: error?.message };
 }
 
+export async function deletePublicArticle(id: string): Promise<{ error?: string }> {
+  if (!currentUserIsAdmin()) return { error: "Admin permission required" };
+
+  const { error } = await supabase
+    .from("articles")
+    .delete()
+    .eq("id", id)
+    .eq("is_public", true)
+    .eq("review_status", "approved");
+  return { error: error?.message };
+}
+
 interface UploadSessionParams {
   articleId?: string;
   stats: TypingStats;

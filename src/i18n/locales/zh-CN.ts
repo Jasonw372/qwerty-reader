@@ -81,6 +81,7 @@ const zhCN = {
     publicLibrary: "已公开",
     noPublicArticles: "暂无公开文章",
     useArticle: "使用",
+    deletePublicConfirm: "确认从公共文章库删除这篇文章吗？此操作不可撤销。",
   },
   review: {
     title: "文章审核",
@@ -90,9 +91,7 @@ const zhCN = {
     loadError: "无法加载审核数据",
     loading: "加载中...",
     pending: "待审核",
-    approved: "已公开",
     empty: "暂无待审核文章",
-    noApproved: "暂无公开文章",
     approve: "通过",
     reject: "拒绝",
   },

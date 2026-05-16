@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useArticleStore } from "../../store/articleStore.ts";
 import type { Article } from "../../types/index.ts";
 import { useTranslation } from "react-i18next";
-import { fetchPublicArticles } from "../../lib/sync.ts";
+import { currentUserIsAdmin, deletePublicArticle, fetchPublicArticles } from "../../lib/sync.ts";
 import { ArticlePreviewModal } from "./ArticlePreviewModal.tsx";
 
 type Tab = "list" | "public" | "upload" | "input";
@@ -30,7 +30,9 @@ export function ArticleManager() {
   const [publicArticles, setPublicArticles] = useState<Article[]>([]);
   const [publicLoading, setPublicLoading] = useState(false);
   const [publicError, setPublicError] = useState("");
+  const [deletingPublicId, setDeletingPublicId] = useState<string | null>(null);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
+  const isAdmin = currentUserIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function loadPublicArticles() {
@@ -121,6 +123,22 @@ export function ArticleManager() {
     setInputError("");
     setInputPublic(false);
     closeManager();
+  }
+
+  async function handleDeletePublicArticle(id: string) {
+    const confirmed = window.confirm(t("articleManager.deletePublicConfirm"));
+    if (!confirmed) return;
+
+    setDeletingPublicId(id);
+    setPublicError("");
+    const { error } = await deletePublicArticle(id);
+    setDeletingPublicId(null);
+    if (error) {
+      setPublicError(error);
+      return;
+    }
+    if (previewArticle?.id === id) setPreviewArticle(null);
+    await loadPublicArticles();
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -271,8 +289,13 @@ export function ArticleManager() {
                         key={article.id}
                         article={article}
                         primaryActionLabel={t("articleManager.useArticle")}
+                        deleteActionLabel={isAdmin ? t("articleManager.delete") : undefined}
+                        busy={deletingPublicId === article.id}
                         onPrimary={() => handleSelect(article)}
                         onPreview={() => setPreviewArticle(article)}
+                        onDelete={
+                          isAdmin ? () => void handleDeletePublicArticle(article.id) : undefined
+                        }
                       />
                     ))}
                   </ul>
@@ -397,13 +420,19 @@ export function ArticleManager() {
 function PublicArticleItem({
   article,
   primaryActionLabel,
+  deleteActionLabel,
+  busy = false,
   onPrimary,
   onPreview,
+  onDelete,
 }: {
   article: Article;
   primaryActionLabel: string;
+  deleteActionLabel?: string;
+  busy?: boolean;
   onPrimary: () => void;
   onPreview: () => void;
+  onDelete?: () => void;
 }) {
   const { t } = useTranslation();
   const charCount = article.content.trim().length;
@@ -427,6 +456,16 @@ function PublicArticleItem({
         >
           {t("articlePreview.view")}
         </button>
+        {deleteActionLabel && onDelete && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onDelete}
+            className="soft-button rounded-lg px-2.5 py-1 text-xs text-[var(--theme-text-error)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {deleteActionLabel}
+          </button>
+        )}
         <button
           type="button"
           onClick={onPrimary}
