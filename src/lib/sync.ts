@@ -9,6 +9,17 @@ type DbArticleRow = Database["public"]["Tables"]["articles"]["Row"];
 type DbSessionInsert = Database["public"]["Tables"]["typing_sessions"]["Insert"];
 type DbSessionRow = Database["public"]["Tables"]["typing_sessions"]["Row"];
 
+export interface PublicArticlePage {
+  articles: Article[];
+  total: number;
+}
+
+export interface PublicArticlePageParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}
+
 function currentUserId(): string | null {
   return useAuthStore.getState().user?.id ?? null;
 }
@@ -84,16 +95,40 @@ export async function deleteArticleRemote(id: string): Promise<{ error?: string 
   return { error: error?.message };
 }
 
-export async function fetchPublicArticles(): Promise<Article[]> {
-  const { data, error } = await supabase
+function sanitizeSearch(value: string): string {
+  return value.replace(/[%,_()]/g, "").trim();
+}
+
+export async function fetchPublicArticles({
+  page = 1,
+  pageSize = 12,
+  search = "",
+}: PublicArticlePageParams = {}): Promise<PublicArticlePage> {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(Math.max(1, pageSize), 50);
+  const from = (safePage - 1) * safePageSize;
+  const to = from + safePageSize - 1;
+  const term = sanitizeSearch(search);
+
+  let query = supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status")
+    .select("id, title, content, source, is_public, review_status", { count: "exact" })
     .eq("is_public", true)
     .eq("review_status", "approved")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .range(from, to);
+
+  if (term) {
+    query = query.or(`title.ilike.%${term}%,source.ilike.%${term}%`);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) throw new Error(error.message);
-  return ((data ?? []) as DbArticleRow[]).map(mapArticle);
+  return {
+    articles: ((data ?? []) as DbArticleRow[]).map(mapArticle),
+    total: count ?? 0,
+  };
 }
 
 export async function fetchPendingPublicArticles(): Promise<Article[]> {

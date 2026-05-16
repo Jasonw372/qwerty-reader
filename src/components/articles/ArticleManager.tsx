@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useArticleStore } from "../../store/articleStore.ts";
 import type { Article } from "../../types/index.ts";
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,9 @@ import { currentUserIsAdmin, deletePublicArticle, fetchPublicArticles } from "..
 import { ArticlePreviewModal } from "./ArticlePreviewModal.tsx";
 
 type Tab = "list" | "public" | "upload" | "input";
+
+const LOCAL_PAGE_SIZE = 10;
+const PUBLIC_PAGE_SIZE = 8;
 
 export function ArticleManager() {
   const { t } = useTranslation();
@@ -28,10 +31,15 @@ export function ArticleManager() {
   const [uploadPublic, setUploadPublic] = useState(false);
   const [inputPublic, setInputPublic] = useState(false);
   const [publicArticles, setPublicArticles] = useState<Article[]>([]);
+  const [publicTotal, setPublicTotal] = useState(0);
+  const [publicPage, setPublicPage] = useState(1);
+  const [publicSearchDraft, setPublicSearchDraft] = useState("");
+  const [publicSearch, setPublicSearch] = useState("");
   const [publicLoading, setPublicLoading] = useState(false);
   const [publicError, setPublicError] = useState("");
   const [deletingPublicId, setDeletingPublicId] = useState<string | null>(null);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
+  const [localPage, setLocalPage] = useState(1);
   const isAdmin = currentUserIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,7 +47,13 @@ export function ArticleManager() {
     setPublicLoading(true);
     setPublicError("");
     try {
-      setPublicArticles(await fetchPublicArticles());
+      const result = await fetchPublicArticles({
+        page: publicPage,
+        pageSize: PUBLIC_PAGE_SIZE,
+        search: publicSearch,
+      });
+      setPublicArticles(result.articles);
+      setPublicTotal(result.total);
     } catch (err) {
       setPublicError(err instanceof Error ? err.message : t("articleManager.publicLoadError"));
     } finally {
@@ -49,7 +63,22 @@ export function ArticleManager() {
 
   useEffect(() => {
     if (tab === "public") void loadPublicArticles();
-  }, [tab]);
+  }, [tab, publicPage, publicSearch]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPublicSearch(publicSearchDraft.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [publicSearchDraft]);
+
+  useEffect(() => {
+    setLocalPage(1);
+  }, [articles.length]);
+
+  useEffect(() => {
+    setPublicPage(1);
+  }, [publicSearch]);
 
   function handleSelect(article: Article) {
     setCurrentArticle(article);
@@ -141,6 +170,16 @@ export function ArticleManager() {
     await loadPublicArticles();
   }
 
+  const localTotalPages = Math.max(1, Math.ceil(articles.length / LOCAL_PAGE_SIZE));
+  const localPageArticles = useMemo(() => {
+    const safePage = Math.min(localPage, localTotalPages);
+    const start = (safePage - 1) * LOCAL_PAGE_SIZE;
+    return articles.slice(start, start + LOCAL_PAGE_SIZE);
+  }, [articles, localPage, localTotalPages]);
+  const publicTotalPages = Math.max(1, Math.ceil(publicTotal / PUBLIC_PAGE_SIZE));
+  const publicStart = publicTotal === 0 ? 0 : (publicPage - 1) * PUBLIC_PAGE_SIZE + 1;
+  const publicEnd = Math.min(publicPage * PUBLIC_PAGE_SIZE, publicTotal);
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "list", label: t("articleManager.tabList") },
     { key: "public", label: t("articleManager.tabPublic") },
@@ -192,48 +231,32 @@ export function ArticleManager() {
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "list" && (
-            <div className="flex flex-col gap-3">
-              <ul className="flex flex-col gap-2">
-                {articles.map((a) => (
-                  <li
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+              <ListHeader
+                title={t("articleManager.localLibrary")}
+                countLabel={t("articleManager.pageRange", {
+                  start: (localPage - 1) * LOCAL_PAGE_SIZE + 1,
+                  end: Math.min(localPage * LOCAL_PAGE_SIZE, articles.length),
+                  total: articles.length,
+                })}
+              />
+              <ul className="flex flex-col gap-1.5">
+                {localPageArticles.map((a) => (
+                  <LocalArticleItem
                     key={a.id}
-                    onClick={() => handleSelect(a)}
-                    className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] px-4 py-3 cursor-pointer transition-all hover:-translate-y-0.5 hover:border-[var(--theme-border-strong)]"
-                    style={{
-                      backgroundColor:
-                        a.id === currentArticle?.id ? "var(--theme-hud-bg)" : "transparent",
-                    }}
-                  >
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <span
-                        className="text-sm truncate"
-                        style={{
-                          color:
-                            a.id === currentArticle?.id
-                              ? "var(--theme-text-correct)"
-                              : "var(--theme-text-pending)",
-                        }}
-                      >
-                        {a.title}
-                      </span>
-                      {a.source && (
-                        <span className="text-xs text-[var(--theme-text-muted)]">{a.source}</span>
-                      )}
-                      {a.reviewStatus === "pending" && (
-                        <span className="text-xs text-[var(--theme-accent)]">
-                          {t("articleManager.pendingReview")}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => handleRemove(e, a.id)}
-                      className="soft-button ml-4 shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
-                    >
-                      {t("articleManager.delete")}
-                    </button>
-                  </li>
+                    article={a}
+                    active={a.id === currentArticle?.id}
+                    onSelect={() => handleSelect(a)}
+                    onRemove={(e) => handleRemove(e, a.id)}
+                  />
                 ))}
               </ul>
+              <PaginationControls
+                page={localPage}
+                totalPages={localTotalPages}
+                onPrevious={() => setLocalPage((page) => Math.max(1, page - 1))}
+                onNext={() => setLocalPage((page) => Math.min(localTotalPages, page + 1))}
+              />
               {hiddenPresetCount > 0 && (
                 <button
                   onClick={restorePresets}
@@ -247,19 +270,28 @@ export function ArticleManager() {
           )}
 
           {tab === "public" && (
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-[var(--theme-text-muted)]">
-                  {t("articleManager.publicHint")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void loadPublicArticles()}
-                  className="soft-button shrink-0 rounded-lg px-3 py-1.5 text-xs cursor-pointer"
-                >
-                  {publicLoading ? t("articleManager.loading") : t("articleManager.refresh")}
-                </button>
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <input
+                  type="search"
+                  value={publicSearchDraft}
+                  onChange={(e) => setPublicSearchDraft(e.target.value)}
+                  placeholder={t("articleManager.searchPublicPlaceholder")}
+                  className="field h-9 w-full rounded-xl px-3 text-sm outline-none"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadPublicArticles()}
+                    className="soft-button shrink-0 rounded-lg px-3 py-1.5 text-xs cursor-pointer"
+                  >
+                    {publicLoading ? t("articleManager.loading") : t("articleManager.refresh")}
+                  </button>
+                </div>
               </div>
+              <p className="text-xs leading-5 text-[var(--theme-text-muted)]">
+                {t("articleManager.publicHint")}
+              </p>
 
               {publicError && (
                 <p className="rounded-xl border border-[var(--theme-border)] px-3 py-2 text-xs text-[var(--theme-text-error)]">
@@ -268,14 +300,14 @@ export function ArticleManager() {
               )}
 
               <section className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs uppercase tracking-[0.16em] text-[var(--theme-text-pending)]">
-                    {t("articleManager.publicLibrary")}
-                  </h3>
-                  <span className="text-xs text-[var(--theme-text-muted)]">
-                    {publicArticles.length}
-                  </span>
-                </div>
+                <ListHeader
+                  title={t("articleManager.publicLibrary")}
+                  countLabel={t("articleManager.pageRange", {
+                    start: publicStart,
+                    end: publicEnd,
+                    total: publicTotal,
+                  })}
+                />
                 {publicArticles.length === 0 ? (
                   <p className="rounded-xl border border-[var(--theme-border)] px-4 py-3 text-sm text-[var(--theme-text-pending)]">
                     {publicLoading
@@ -300,6 +332,12 @@ export function ArticleManager() {
                     ))}
                   </ul>
                 )}
+                <PaginationControls
+                  page={publicPage}
+                  totalPages={publicTotalPages}
+                  onPrevious={() => setPublicPage((page) => Math.max(1, page - 1))}
+                  onNext={() => setPublicPage((page) => Math.min(publicTotalPages, page + 1))}
+                />
               </section>
             </div>
           )}
@@ -417,6 +455,104 @@ export function ArticleManager() {
   );
 }
 
+function ListHeader({ title, countLabel }: { title: string; countLabel: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--theme-border)] pb-2">
+      <h3 className="text-[11px] uppercase tracking-[0.16em] text-[var(--theme-text-pending)]">
+        {title}
+      </h3>
+      <span className="shrink-0 text-[11px] text-[var(--theme-text-muted)]">{countLabel}</span>
+    </div>
+  );
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  onPrevious,
+  onNext,
+}: {
+  page: number;
+  totalPages: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center justify-end gap-2 pt-2">
+      <button
+        type="button"
+        onClick={onPrevious}
+        disabled={page <= 1}
+        className="soft-button rounded-lg px-2.5 py-1 text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {t("articleManager.previousPage")}
+      </button>
+      <span className="min-w-16 text-center text-xs text-[var(--theme-text-muted)]">
+        {t("articleManager.pageIndicator", { page, total: totalPages })}
+      </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={page >= totalPages}
+        className="soft-button rounded-lg px-2.5 py-1 text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {t("articleManager.nextPage")}
+      </button>
+    </div>
+  );
+}
+
+function LocalArticleItem({
+  article,
+  active,
+  onSelect,
+  onRemove,
+}: {
+  article: Article;
+  active: boolean;
+  onSelect: () => void;
+  onRemove: (event: React.MouseEvent) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <li
+      onClick={onSelect}
+      className="grid cursor-pointer grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-[var(--theme-border)] px-3 py-2 transition-colors hover:border-[var(--theme-border-strong)]"
+      style={{
+        backgroundColor: active ? "var(--theme-hud-bg)" : "transparent",
+      }}
+    >
+      <div className="min-w-0">
+        <div
+          className="truncate text-sm"
+          style={{
+            color: active ? "var(--theme-text-correct)" : "var(--theme-text-pending)",
+          }}
+        >
+          {article.title}
+        </div>
+        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--theme-text-muted)]">
+          {article.source && <span className="truncate">{article.source}</span>}
+          {article.reviewStatus === "pending" && (
+            <span className="shrink-0 text-[var(--theme-accent)]">
+              {t("articleManager.pendingReview")}
+            </span>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={onRemove}
+        className="soft-button shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
+      >
+        {t("articleManager.delete")}
+      </button>
+    </li>
+  );
+}
+
 function PublicArticleItem({
   article,
   primaryActionLabel,
@@ -438,13 +574,13 @@ function PublicArticleItem({
   const charCount = article.content.trim().length;
 
   return (
-    <li className="flex items-center justify-between gap-4 rounded-xl border border-[var(--theme-border)] px-4 py-3">
+    <li className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-[var(--theme-border)] px-3 py-2">
       <button type="button" onClick={onPreview} className="min-w-0 flex-1 text-left">
         <div className="truncate text-sm text-[var(--theme-text-correct)]">{article.title}</div>
         <div className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">
           {article.content}
         </div>
-        <div className="mt-2 text-[10px] uppercase tracking-[0.12em] text-[var(--theme-text-muted)]">
+        <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--theme-text-muted)]">
           {t("articlePreview.chars", { count: charCount })}
         </div>
       </button>

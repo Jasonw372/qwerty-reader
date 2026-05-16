@@ -22,6 +22,22 @@ CREATE INDEX IF NOT EXISTS idx_articles_public_approved
   ON public.articles(updated_at DESC)
   WHERE is_public = true AND review_status = 'approved';
 
+-- Optional but recommended once the public library grows:
+-- keeps paginated public-library reads ordered cheaply and supports title/source search.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS idx_articles_public_approved_updated_id
+  ON public.articles(updated_at DESC, id)
+  WHERE is_public = true AND review_status = 'approved';
+
+CREATE INDEX IF NOT EXISTS idx_articles_public_approved_title_trgm
+  ON public.articles USING gin (title gin_trgm_ops)
+  WHERE is_public = true AND review_status = 'approved';
+
+CREATE INDEX IF NOT EXISTS idx_articles_public_approved_source_trgm
+  ON public.articles USING gin (source gin_trgm_ops)
+  WHERE is_public = true AND review_status = 'approved' AND source IS NOT NULL;
+
 -- 2. Admin helper
 -- Set a user as admin from the SQL editor, replacing the email:
 -- UPDATE auth.users
