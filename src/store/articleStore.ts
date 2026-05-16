@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import type { Article } from "../types/index.ts";
-import { uploadArticle, deleteArticleRemote, fetchArticles } from "../lib/sync.ts";
 import { PRESET_ARTICLES, PRESET_IDS, isPresetArticle } from "../data/articles/index.ts";
 
 const IDB_KEY = "qwerty-reader:articles";
@@ -87,7 +86,7 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
       persistUserArticles(articles);
       return { articles };
     });
-    void uploadArticle(article);
+    void import("../lib/sync.ts").then(({ uploadArticle }) => uploadArticle(article));
   },
 
   removeArticle(id) {
@@ -104,7 +103,7 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
         articles = state.articles.filter((a) => a.id !== id);
         void idbDel(id);
         persistUserArticles(articles);
-        void deleteArticleRemote(id);
+        void import("../lib/sync.ts").then(({ deleteArticleRemote }) => deleteArticleRemote(id));
       }
 
       const currentArticle =
@@ -159,6 +158,7 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
   async syncFromCloud() {
     set({ syncing: true });
     try {
+      const { fetchArticles, uploadArticle } = await import("../lib/sync.ts");
       const remote = await fetchArticles();
       const { hiddenPresetIds } = get();
       const localUser = get().articles.filter((a) => !PRESET_IDS.has(a.id));

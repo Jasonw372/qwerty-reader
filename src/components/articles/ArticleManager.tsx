@@ -3,12 +3,29 @@ import { useArticleStore } from "../../store/articleStore.ts";
 import type { Article } from "../../types/index.ts";
 import { useTranslation } from "react-i18next";
 import { currentUserIsAdmin, deletePublicArticle, fetchPublicArticles } from "../../lib/sync.ts";
+import { ArticleContentEditor } from "./ArticleContentEditor.tsx";
 import { ArticlePreviewModal } from "./ArticlePreviewModal.tsx";
 
-type Tab = "list" | "public" | "upload" | "input";
+type Tab = "list" | "public" | "create";
 
 const LOCAL_PAGE_SIZE = 10;
 const PUBLIC_PAGE_SIZE = 8;
+
+function isAllowedEnglishChar(char: string): boolean {
+  const code = char.charCodeAt(0);
+  return code === 9 || code === 10 || code === 13 || (code >= 32 && code <= 126);
+}
+
+function isEnglishOnlyText(value: string): boolean {
+  return Array.from(value).every(isAllowedEnglishChar);
+}
+
+function getNonEnglishChars(value: string): string[] {
+  return Array.from(new Set(Array.from(value).filter((char) => !isAllowedEnglishChar(char)))).slice(
+    0,
+    12,
+  );
+}
 
 export function ArticleManager() {
   const { t } = useTranslation();
@@ -22,14 +39,12 @@ export function ArticleManager() {
   const closeManager = useArticleStore((s) => s.closeManager);
 
   const [tab, setTab] = useState<Tab>("list");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [inputError, setInputError] = useState("");
-  const [uploadTitle, setUploadTitle] = useState("");
-  const [uploadContent, setUploadContent] = useState("");
-  const [uploadError, setUploadError] = useState("");
-  const [uploadPublic, setUploadPublic] = useState(false);
-  const [inputPublic, setInputPublic] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [draftError, setDraftError] = useState("");
+  const [invalidChars, setInvalidChars] = useState<string[]>([]);
+  const [draftPublic, setDraftPublic] = useState(false);
+  const [loadedFileName, setLoadedFileName] = useState("");
   const [publicArticles, setPublicArticles] = useState<Article[]>([]);
   const [publicTotal, setPublicTotal] = useState(0);
   const [publicPage, setPublicPage] = useState(1);
@@ -96,61 +111,45 @@ export function ArticleManager() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      setUploadTitle(file.name.replace(/\.txt$/i, ""));
-      setUploadContent(text.trim());
-      setUploadError("");
+      setDraftTitle((current) => current || file.name.replace(/\.txt$/i, ""));
+      setDraftContent(text.trim());
+      setLoadedFileName(file.name);
+      setDraftError("");
     };
     reader.readAsText(file, "utf-8");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleUploadSubmit() {
-    if (!uploadTitle.trim()) {
-      setUploadError(t("articleManager.errorTitleRequired"));
+  function handleCreateSubmit() {
+    if (!draftTitle.trim()) {
+      setDraftError(t("articleManager.errorTitleRequired"));
+      setInvalidChars([]);
       return;
     }
-    if (!uploadContent.trim()) {
-      setUploadError(t("articleManager.errorSelectFile"));
+    if (!draftContent.trim()) {
+      setDraftError(t("articleManager.errorContentRequired"));
+      setInvalidChars([]);
       return;
     }
-    const article: Article = {
-      id: crypto.randomUUID(),
-      title: uploadTitle.trim(),
-      content: uploadContent,
-      source: "upload",
-      reviewStatus: uploadPublic ? "pending" : "private",
-    };
-    addArticle(article);
-    setCurrentArticle(article);
-    setUploadTitle("");
-    setUploadContent("");
-    setUploadError("");
-    setUploadPublic(false);
-    closeManager();
-  }
-
-  function handleInputSubmit() {
-    if (!title.trim()) {
-      setInputError(t("articleManager.errorTitleRequired"));
-      return;
-    }
-    if (!content.trim()) {
-      setInputError(t("articleManager.errorContentRequired"));
+    if (!isEnglishOnlyText(draftContent)) {
+      setDraftError(t("articleManager.errorEnglishOnly"));
+      setInvalidChars(getNonEnglishChars(draftContent));
       return;
     }
     const article: Article = {
       id: crypto.randomUUID(),
-      title: title.trim(),
-      content: content.trim(),
-      source: "manual",
-      reviewStatus: inputPublic ? "pending" : "private",
+      title: draftTitle.trim(),
+      content: draftContent.trim(),
+      source: loadedFileName ? "upload" : "manual",
+      reviewStatus: draftPublic ? "pending" : "private",
     };
     addArticle(article);
     setCurrentArticle(article);
-    setTitle("");
-    setContent("");
-    setInputError("");
-    setInputPublic(false);
+    setDraftTitle("");
+    setDraftContent("");
+    setDraftError("");
+    setDraftPublic(false);
+    setLoadedFileName("");
     closeManager();
   }
 
@@ -183,8 +182,7 @@ export function ArticleManager() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "list", label: t("articleManager.tabList") },
     { key: "public", label: t("articleManager.tabPublic") },
-    { key: "upload", label: t("articleManager.tabUpload") },
-    { key: "input", label: t("articleManager.tabInput") },
+    { key: "create", label: t("articleManager.tabCreate") },
   ];
 
   return (
@@ -342,103 +340,116 @@ export function ArticleManager() {
             </div>
           )}
 
-          {tab === "upload" && (
-            <div className="flex flex-col gap-3">
-              {uploadError && (
-                <p className="text-xs" style={{ color: "var(--theme-text-incorrect, #e06c75)" }}>
-                  {uploadError}
-                </p>
-              )}
-              <div className="flex items-center gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".txt"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="soft-button shrink-0 rounded-xl px-4 py-2 text-sm cursor-pointer"
+          {tab === "create" && (
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+              {draftError && (
+                <div
+                  role="alert"
+                  className="rounded-xl border px-4 py-3 text-xs leading-5"
+                  style={{
+                    borderColor: "color-mix(in srgb, var(--theme-text-error) 28%, transparent)",
+                    backgroundColor: "color-mix(in srgb, var(--theme-text-error) 8%, transparent)",
+                    color: "var(--theme-text-pending)",
+                  }}
                 >
-                  {t("articleManager.chooseFile")}
-                </label>
-                <span className="text-xs text-[var(--theme-text-muted)] truncate">
-                  {uploadContent ? t("articleManager.fileLoaded") : t("articleManager.fileHint")}
-                </span>
+                  <div className="mb-1 font-medium text-[var(--theme-text-correct)]">
+                    {t("articleManager.formNoticeTitle")}
+                  </div>
+                  <div>{draftError}</div>
+                  {invalidChars.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {invalidChars.map((char) => (
+                        <span
+                          key={char}
+                          className="rounded-md border px-2 py-1 font-mono text-[11px] text-[var(--theme-text-correct)]"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--theme-text-error) 34%, transparent)",
+                            backgroundColor:
+                              "color-mix(in srgb, var(--theme-text-error) 12%, transparent)",
+                          }}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="rounded-xl border border-[var(--theme-border)] px-4 py-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm text-[var(--theme-text-correct)]">
+                      {t("articleManager.fileImportTitle")}
+                    </div>
+                    <div className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">
+                      {loadedFileName || t("articleManager.fileHint")}
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="soft-button shrink-0 rounded-xl px-4 py-2 text-sm cursor-pointer"
+                  >
+                    {loadedFileName
+                      ? t("articleManager.replaceFile")
+                      : t("articleManager.chooseFile")}
+                  </label>
+                </div>
               </div>
               <input
                 type="text"
-                placeholder={t("articleManager.uploadTitlePlaceholder")}
-                value={uploadTitle}
-                onChange={(e) => {
-                  setUploadTitle(e.target.value);
-                  setUploadError("");
-                }}
-                className="field w-full rounded-xl px-3 py-2 text-sm outline-none"
-              />
-              <label className="flex items-center gap-2 text-xs text-[var(--theme-text-pending)]">
-                <input
-                  type="checkbox"
-                  checked={uploadPublic}
-                  onChange={(e) => setUploadPublic(e.target.checked)}
-                  className="accent-[var(--theme-cursor)]"
-                />
-                {t("articleManager.submitForReview")}
-              </label>
-              <button
-                onClick={handleUploadSubmit}
-                disabled={!uploadContent}
-                className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {t("articleManager.addArticle")}
-              </button>
-            </div>
-          )}
-
-          {tab === "input" && (
-            <div className="flex flex-col gap-3">
-              {inputError && (
-                <p className="text-xs" style={{ color: "var(--theme-text-incorrect, #e06c75)" }}>
-                  {inputError}
-                </p>
-              )}
-              <input
-                type="text"
                 placeholder={t("articleManager.inputTitlePlaceholder")}
-                value={title}
+                value={draftTitle}
                 onChange={(e) => {
-                  setTitle(e.target.value);
-                  setInputError("");
+                  setDraftTitle(e.target.value);
+                  setDraftError("");
+                  setInvalidChars([]);
                 }}
                 className="field w-full rounded-xl px-3 py-2 text-sm outline-none"
               />
-              <textarea
-                placeholder={t("articleManager.inputContentPlaceholder")}
-                value={content}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  setInputError("");
+              <ArticleContentEditor
+                value={draftContent}
+                placeholderText={t("articleManager.inputContentPlaceholder")}
+                invalid={invalidChars.length > 0}
+                onChange={(nextContent) => {
+                  setDraftContent(nextContent);
+                  setDraftError("");
+                  setInvalidChars([]);
                 }}
-                rows={10}
-                className="field w-full resize-none rounded-xl px-3 py-2 text-sm outline-none"
               />
-              <label className="flex items-center gap-2 text-xs text-[var(--theme-text-pending)]">
-                <input
-                  type="checkbox"
-                  checked={inputPublic}
-                  onChange={(e) => setInputPublic(e.target.checked)}
-                  className="accent-[var(--theme-cursor)]"
-                />
-                {t("articleManager.submitForReview")}
-              </label>
-              <button
-                onClick={handleInputSubmit}
-                className="primary-button self-end rounded-xl px-5 py-2 text-sm cursor-pointer"
-              >
-                {t("articleManager.addArticle")}
-              </button>
+              <p className="rounded-xl border border-[var(--theme-border)] px-3 py-2 text-xs leading-5 text-[var(--theme-text-muted)]">
+                {t("articleManager.englishOnlyHint")}
+              </p>
+              <div className="flex flex-col gap-3 border-t border-[var(--theme-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex items-center gap-2 text-xs text-[var(--theme-text-pending)]">
+                  <input
+                    type="checkbox"
+                    checked={draftPublic}
+                    onChange={(e) => setDraftPublic(e.target.checked)}
+                    className="accent-[var(--theme-cursor)]"
+                  />
+                  {t("articleManager.submitForReview")}
+                </label>
+                <div className="flex items-center justify-end gap-3">
+                  <span className="text-xs text-[var(--theme-text-muted)]">
+                    {t("articlePreview.chars", { count: draftContent.trim().length })}
+                  </span>
+                  <button
+                    onClick={handleCreateSubmit}
+                    className="primary-button rounded-xl px-5 py-2 text-sm cursor-pointer"
+                  >
+                    {t("articleManager.addArticle")}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

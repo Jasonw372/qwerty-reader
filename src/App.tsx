@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HUD } from "./components/hud/HUD.tsx";
 import { TypingStage } from "./components/typing/TypingStage.tsx";
 import { FinishSummary } from "./components/summary/FinishSummary.tsx";
 import { ReadingPreview } from "./components/reading/ReadingPreview.tsx";
 import { DictPanel } from "./components/dict/DictPanel.tsx";
 import { ShortcutsBar } from "./components/shortcuts/ShortcutsBar.tsx";
-import { ArticleManager } from "./components/articles/ArticleManager.tsx";
 import { SettingsModal } from "./components/settings/SettingsModal.tsx";
 import { HistoryModal } from "./components/history/HistoryModal.tsx";
 import { ReviewQueueModal } from "./components/admin/ReviewQueueModal.tsx";
@@ -18,9 +17,14 @@ import { useTypingStore } from "./store/typingStore.ts";
 import { useArticleStore } from "./store/articleStore.ts";
 import { useSettingsStore } from "./store/settingsStore.ts";
 import { useAuthStore } from "./store/authStore.ts";
-import { currentUserIsAdmin, uploadSession } from "./lib/sync.ts";
 
 type PracticePhase = "reading" | "typing";
+
+const ArticleManager = lazy(() =>
+  import("./components/articles/ArticleManager.tsx").then((module) => ({
+    default: module.ArticleManager,
+  })),
+);
 
 export function App() {
   const currentArticle = useArticleStore((s) => s.currentArticle);
@@ -77,18 +81,20 @@ export function App() {
     if (!authed || !isFinished) return;
     const { wpm, accuracy, elapsed, effectiveTypeCount, correctTypeCount, keystrokes } =
       useTypingStore.getState();
-    void uploadSession({
-      articleId: currentArticle?.id,
-      stats: {
-        wpm,
-        accuracy,
-        elapsed,
-        totalChars: correctTypeCount,
-        correctChars: correctTypeCount,
-        errorChars: Math.max(0, effectiveTypeCount - correctTypeCount),
-      },
-      keystrokes,
-    });
+    void import("./lib/sync.ts").then(({ uploadSession }) =>
+      uploadSession({
+        articleId: currentArticle?.id,
+        stats: {
+          wpm,
+          accuracy,
+          elapsed,
+          totalChars: correctTypeCount,
+          correctChars: correctTypeCount,
+          errorChars: Math.max(0, effectiveTypeCount - correctTypeCount),
+        },
+        keystrokes,
+      }),
+    );
   }, [authed, isFinished, currentArticle?.id]);
 
   useEffect(() => {
@@ -136,7 +142,7 @@ export function App() {
       <HUD
         onOpenReading={currentArticle ? () => setPhase("reading") : undefined}
         onOpenHistory={() => setHistoryOpen(true)}
-        onOpenReview={currentUserIsAdmin() ? () => setReviewOpen(true) : undefined}
+        onOpenReview={isCurrentUserAdmin() ? () => setReviewOpen(true) : undefined}
       />
       <main className="flex-1 overflow-y-auto pb-10">
         {currentArticle && phase === "reading" && (
@@ -151,10 +157,32 @@ export function App() {
       </main>
       <DictPanel entry={entry} loading={loading} error={error} onClose={clear} />
       <ShortcutsBar />
-      {managerOpen && <ArticleManager />}
+      {managerOpen && (
+        <Suspense fallback={<ArticleManagerFallback />}>
+          <ArticleManager />
+        </Suspense>
+      )}
       {settingsOpen && <SettingsModal />}
       {historyOpen && <HistoryModal onClose={() => setHistoryOpen(false)} />}
       {reviewOpen && <ReviewQueueModal onClose={() => setReviewOpen(false)} />}
+    </div>
+  );
+}
+
+function isCurrentUserAdmin(): boolean {
+  const user = useAuthStore.getState().user;
+  return user?.app_metadata?.role === "admin" || user?.user_metadata?.role === "admin";
+}
+
+function ArticleManagerFallback() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+      <div className="glass-panel w-full max-w-3xl rounded-2xl px-6 py-5 font-mono">
+        <div className="h-4 w-28 rounded-full bg-[var(--theme-accent-soft)]" />
+        <div className="mt-5 h-9 rounded-xl border border-[var(--theme-border)]" />
+        <div className="mt-3 h-9 rounded-xl border border-[var(--theme-border)]" />
+        <div className="mt-3 h-9 rounded-xl border border-[var(--theme-border)]" />
+      </div>
     </div>
   );
 }
