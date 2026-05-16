@@ -26,7 +26,7 @@ export interface Article {
   title: string;
   content: string;
   source?: string;
-  category?: string;
+  tags?: string[];
   isPublic?: boolean;
   reviewStatus?: ArticleReviewStatus;
 }

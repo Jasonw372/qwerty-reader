@@ -18,6 +18,7 @@ export interface PublicArticlePageParams {
   page?: number;
   pageSize?: number;
   search?: string;
+  tags?: string[];
 }
 
 function currentUserId(): string | null {
@@ -30,13 +31,17 @@ export function currentUserIsAdmin(): boolean {
 }
 
 function mapArticle(
-  row: Pick<DbArticleRow, "id" | "title" | "content" | "source" | "is_public" | "review_status">,
+  row: Pick<
+    DbArticleRow,
+    "id" | "title" | "content" | "source" | "is_public" | "review_status" | "tags"
+  >,
 ): Article {
   return {
     id: row.id,
     title: row.title,
     content: row.content,
     source: row.source ?? undefined,
+    tags: row.tags ?? undefined,
     isPublic: row.is_public,
     reviewStatus: row.review_status,
   };
@@ -57,7 +62,7 @@ export async function uploadArticle(article: Article): Promise<{ error?: string 
     language: "en-US",
     is_public: article.reviewStatus === "approved",
     review_status: article.reviewStatus ?? "private",
-    tags: null,
+    tags: article.tags ?? null,
     submitted_at: article.reviewStatus === "pending" ? now : null,
     reviewed_at: null,
     reviewed_by: null,
@@ -77,7 +82,7 @@ export async function fetchArticles(): Promise<Article[]> {
   if (!userId) return [];
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status")
+    .select("id, title, content, source, is_public, review_status, tags")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -103,6 +108,7 @@ export async function fetchPublicArticles({
   page = 1,
   pageSize = 12,
   search = "",
+  tags,
 }: PublicArticlePageParams = {}): Promise<PublicArticlePage> {
   const safePage = Math.max(1, page);
   const safePageSize = Math.min(Math.max(1, pageSize), 50);
@@ -112,7 +118,7 @@ export async function fetchPublicArticles({
 
   let query = supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status", { count: "exact" })
+    .select("id, title, content, source, is_public, review_status, tags", { count: "exact" })
     .eq("is_public", true)
     .eq("review_status", "approved")
     .order("updated_at", { ascending: false })
@@ -120,6 +126,10 @@ export async function fetchPublicArticles({
 
   if (term) {
     query = query.or(`title.ilike.%${term}%,source.ilike.%${term}%`);
+  }
+
+  if (tags && tags.length > 0) {
+    query = query.overlaps("tags", tags);
   }
 
   const { data, error, count } = await query;
@@ -135,7 +145,7 @@ export async function fetchPendingPublicArticles(): Promise<Article[]> {
   if (!currentUserIsAdmin()) return [];
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status")
+    .select("id, title, content, source, is_public, review_status, tags")
     .eq("review_status", "pending")
     .order("submitted_at", { ascending: true });
 

@@ -4,7 +4,7 @@ export const webDev: Article = {
   id: "preset-web-dev",
   title: "The Future of Web Development",
   source: "Preset",
-  category: "tech",
+  tags: ["technology"],
   content: `The rapid development of modern web frameworks has fundamentally changed how we approach building applications. React, Vue, and Svelte each offer distinct paradigms for managing state and rendering UI components efficiently.
 
 Server-side rendering has made a significant comeback with frameworks like Next.js and Nuxt, enabling developers to deliver faster initial page loads while maintaining the interactivity of single-page applications. This hybrid approach represents a maturation of the ecosystem.

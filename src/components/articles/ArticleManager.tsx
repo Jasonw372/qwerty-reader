@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { currentUserIsAdmin, deletePublicArticle, fetchPublicArticles } from "../../lib/sync.ts";
 import { ArticleContentEditor } from "./ArticleContentEditor.tsx";
 import { ArticlePreviewModal } from "./ArticlePreviewModal.tsx";
+import { TagFilter } from "./TagFilter.tsx";
 
 type Tab = "list" | "public" | "create";
 
@@ -55,6 +56,9 @@ export function ArticleManager() {
   const [deletingPublicId, setDeletingPublicId] = useState<string | null>(null);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
   const [localPage, setLocalPage] = useState(1);
+  const [localTagFilter, setLocalTagFilter] = useState<string[]>([]);
+  const [publicTagFilter, setPublicTagFilter] = useState<string[]>([]);
+  const [draftTags, setDraftTags] = useState<string[]>([]);
   const isAdmin = currentUserIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +70,7 @@ export function ArticleManager() {
         page: publicPage,
         pageSize: PUBLIC_PAGE_SIZE,
         search: publicSearch,
+        tags: publicTagFilter.length > 0 ? publicTagFilter : undefined,
       });
       setPublicArticles(result.articles);
       setPublicTotal(result.total);
@@ -78,7 +83,7 @@ export function ArticleManager() {
 
   useEffect(() => {
     if (tab === "public") void loadPublicArticles();
-  }, [tab, publicPage, publicSearch]);
+  }, [tab, publicPage, publicSearch, publicTagFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -89,11 +94,11 @@ export function ArticleManager() {
 
   useEffect(() => {
     setLocalPage(1);
-  }, [articles.length]);
+  }, [articles.length, localTagFilter]);
 
   useEffect(() => {
     setPublicPage(1);
-  }, [publicSearch]);
+  }, [publicSearch, publicTagFilter]);
 
   function handleSelect(article: Article) {
     setCurrentArticle(article);
@@ -141,6 +146,7 @@ export function ArticleManager() {
       title: draftTitle.trim(),
       content: draftContent.trim(),
       source: loadedFileName ? "upload" : "manual",
+      tags: draftTags.length > 0 ? draftTags : undefined,
       reviewStatus: draftPublic ? "pending" : "private",
     };
     addArticle(article);
@@ -149,6 +155,7 @@ export function ArticleManager() {
     setDraftContent("");
     setDraftError("");
     setDraftPublic(false);
+    setDraftTags([]);
     setLoadedFileName("");
     closeManager();
   }
@@ -169,15 +176,18 @@ export function ArticleManager() {
     await loadPublicArticles();
   }
 
-  const localTotalPages = Math.max(1, Math.ceil(articles.length / LOCAL_PAGE_SIZE));
+  const filteredLocalArticles = useMemo(() => {
+    if (localTagFilter.length === 0) return articles;
+    return articles.filter((a) => a.tags && a.tags.some((tag) => localTagFilter.includes(tag)));
+  }, [articles, localTagFilter]);
+
+  const localTotalPages = Math.max(1, Math.ceil(filteredLocalArticles.length / LOCAL_PAGE_SIZE));
   const localPageArticles = useMemo(() => {
     const safePage = Math.min(localPage, localTotalPages);
     const start = (safePage - 1) * LOCAL_PAGE_SIZE;
-    return articles.slice(start, start + LOCAL_PAGE_SIZE);
-  }, [articles, localPage, localTotalPages]);
+    return filteredLocalArticles.slice(start, start + LOCAL_PAGE_SIZE);
+  }, [filteredLocalArticles, localPage, localTotalPages]);
   const publicTotalPages = Math.max(1, Math.ceil(publicTotal / PUBLIC_PAGE_SIZE));
-  const publicStart = publicTotal === 0 ? 0 : (publicPage - 1) * PUBLIC_PAGE_SIZE + 1;
-  const publicEnd = Math.min(publicPage * PUBLIC_PAGE_SIZE, publicTotal);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "list", label: t("articleManager.tabList") },
@@ -194,14 +204,21 @@ export function ArticleManager() {
         className="glass-panel relative flex max-h-[82vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl font-mono"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-5">
-          <div>
-            <span className="text-base font-medium text-[var(--theme-text-correct)]">
-              {t("articleManager.title")}
-            </span>
-            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
-              {t("articleManager.availableArticles", { count: articles.length })}
-            </p>
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            {tabs.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`rounded-full border px-3 py-1.5 text-xs cursor-pointer transition-colors ${
+                  tab === key
+                    ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
+                    : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <button
             onClick={closeManager}
@@ -211,33 +228,18 @@ export function ArticleManager() {
           </button>
         </div>
 
-        <div className="flex gap-2 px-6 pt-5 text-xs">
-          {tabs.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`rounded-full border px-3 py-1.5 cursor-pointer transition-colors ${
-                tab === key
-                  ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)]"
-                  : "border-[var(--theme-border)] text-[var(--theme-text-pending)] hover:text-[var(--theme-text-correct)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {tab !== "create" && (
+          <div className="border-b border-[var(--theme-border)] px-6 pb-3">
+            <TagFilter
+              selected={tab === "list" ? localTagFilter : publicTagFilter}
+              onChange={tab === "list" ? setLocalTagFilter : setPublicTagFilter}
+            />
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "list" && (
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
-              <ListHeader
-                title={t("articleManager.localLibrary")}
-                countLabel={t("articleManager.pageRange", {
-                  start: (localPage - 1) * LOCAL_PAGE_SIZE + 1,
-                  end: Math.min(localPage * LOCAL_PAGE_SIZE, articles.length),
-                  total: articles.length,
-                })}
-              />
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
               <ul className="flex flex-col gap-1.5">
                 {localPageArticles.map((a) => (
                   <LocalArticleItem
@@ -268,7 +270,7 @@ export function ArticleManager() {
           )}
 
           {tab === "public" && (
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <input
                   type="search"
@@ -277,19 +279,14 @@ export function ArticleManager() {
                   placeholder={t("articleManager.searchPublicPlaceholder")}
                   className="field h-9 w-full rounded-xl px-3 text-sm outline-none"
                 />
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void loadPublicArticles()}
-                    className="soft-button shrink-0 rounded-lg px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    {publicLoading ? t("articleManager.loading") : t("articleManager.refresh")}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadPublicArticles()}
+                  className="soft-button shrink-0 rounded-lg px-3 py-1.5 text-xs cursor-pointer"
+                >
+                  {publicLoading ? t("articleManager.loading") : t("articleManager.refresh")}
+                </button>
               </div>
-              <p className="text-xs leading-5 text-[var(--theme-text-muted)]">
-                {t("articleManager.publicHint")}
-              </p>
 
               {publicError && (
                 <p className="rounded-xl border border-[var(--theme-border)] px-3 py-2 text-xs text-[var(--theme-text-error)]">
@@ -297,46 +294,36 @@ export function ArticleManager() {
                 </p>
               )}
 
-              <section className="flex flex-col gap-2">
-                <ListHeader
-                  title={t("articleManager.publicLibrary")}
-                  countLabel={t("articleManager.pageRange", {
-                    start: publicStart,
-                    end: publicEnd,
-                    total: publicTotal,
-                  })}
-                />
-                {publicArticles.length === 0 ? (
-                  <p className="rounded-xl border border-[var(--theme-border)] px-4 py-3 text-sm text-[var(--theme-text-pending)]">
-                    {publicLoading
-                      ? t("articleManager.loading")
-                      : t("articleManager.noPublicArticles")}
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-2">
-                    {publicArticles.map((article) => (
-                      <PublicArticleItem
-                        key={article.id}
-                        article={article}
-                        primaryActionLabel={t("articleManager.useArticle")}
-                        deleteActionLabel={isAdmin ? t("articleManager.delete") : undefined}
-                        busy={deletingPublicId === article.id}
-                        onPrimary={() => handleSelect(article)}
-                        onPreview={() => setPreviewArticle(article)}
-                        onDelete={
-                          isAdmin ? () => void handleDeletePublicArticle(article.id) : undefined
-                        }
-                      />
-                    ))}
-                  </ul>
-                )}
-                <PaginationControls
-                  page={publicPage}
-                  totalPages={publicTotalPages}
-                  onPrevious={() => setPublicPage((page) => Math.max(1, page - 1))}
-                  onNext={() => setPublicPage((page) => Math.min(publicTotalPages, page + 1))}
-                />
-              </section>
+              {publicArticles.length === 0 ? (
+                <p className="rounded-xl border border-[var(--theme-border)] px-4 py-3 text-sm text-[var(--theme-text-pending)]">
+                  {publicLoading
+                    ? t("articleManager.loading")
+                    : t("articleManager.noPublicArticles")}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {publicArticles.map((article) => (
+                    <PublicArticleItem
+                      key={article.id}
+                      article={article}
+                      primaryActionLabel={t("articleManager.useArticle")}
+                      deleteActionLabel={isAdmin ? t("articleManager.delete") : undefined}
+                      busy={deletingPublicId === article.id}
+                      onPrimary={() => handleSelect(article)}
+                      onPreview={() => setPreviewArticle(article)}
+                      onDelete={
+                        isAdmin ? () => void handleDeletePublicArticle(article.id) : undefined
+                      }
+                    />
+                  ))}
+                </ul>
+              )}
+              <PaginationControls
+                page={publicPage}
+                totalPages={publicTotalPages}
+                onPrevious={() => setPublicPage((page) => Math.max(1, page - 1))}
+                onNext={() => setPublicPage((page) => Math.min(publicTotalPages, page + 1))}
+              />
             </div>
           )}
 
@@ -428,6 +415,12 @@ export function ArticleManager() {
               <p className="rounded-xl border border-[var(--theme-border)] px-3 py-2 text-xs leading-5 text-[var(--theme-text-muted)]">
                 {t("articleManager.englishOnlyHint")}
               </p>
+              <div className="rounded-xl border border-[var(--theme-border)] px-4 py-3">
+                <div className="mb-2 text-xs text-[var(--theme-text-pending)]">
+                  {t("tags.selectTags")}
+                </div>
+                <TagFilter selected={draftTags} onChange={setDraftTags} showAllOption={false} />
+              </div>
               <div className="flex flex-col gap-3 border-t border-[var(--theme-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <label className="flex items-center gap-2 text-xs text-[var(--theme-text-pending)]">
                   <input
@@ -462,17 +455,6 @@ export function ArticleManager() {
           onClose={() => setPreviewArticle(null)}
         />
       )}
-    </div>
-  );
-}
-
-function ListHeader({ title, countLabel }: { title: string; countLabel: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--theme-border)] pb-2">
-      <h3 className="text-[11px] uppercase tracking-[0.16em] text-[var(--theme-text-pending)]">
-        {title}
-      </h3>
-      <span className="shrink-0 text-[11px] text-[var(--theme-text-muted)]">{countLabel}</span>
     </div>
   );
 }
@@ -553,6 +535,18 @@ function LocalArticleItem({
             </span>
           )}
         </div>
+        {article.tags && article.tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {article.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-[var(--theme-border)] px-1.5 py-0.5 text-[10px] text-[var(--theme-text-muted)]"
+              >
+                {t(`tags.${tag}`)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <button
         onClick={onRemove}
@@ -591,8 +585,22 @@ function PublicArticleItem({
         <div className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">
           {article.content}
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[var(--theme-text-muted)]">
-          {t("articlePreview.chars", { count: charCount })}
+        <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--theme-text-muted)]">
+          <span className="uppercase tracking-[0.12em]">
+            {t("articlePreview.chars", { count: charCount })}
+          </span>
+          {article.tags && article.tags.length > 0 && (
+            <span className="flex gap-1">
+              {article.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-[var(--theme-border)] px-1.5 py-0.5"
+                >
+                  {t(`tags.${tag}`)}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
       </button>
       <div className="flex shrink-0 items-center gap-2">

@@ -97,6 +97,13 @@ button {
 }
 
 @layer components {
+  .scrollbar-none {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
   .space-symbol {
     font-family:
       "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2", "Arial Unicode MS", sans-serif;
