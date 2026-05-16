@@ -1,16 +1,18 @@
 import { create } from "zustand";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
-import type { Article } from "../types/index.ts";
+import type { Article, DifficultyLevel } from "../types/index.ts";
 import { PRESET_ARTICLES, PRESET_IDS, isPresetArticle } from "../data/articles/index.ts";
 
 const IDB_KEY = "qwerty-reader:articles";
 const IDB_CURRENT_KEY = "qwerty-reader:currentArticleId";
 const IDB_HIDDEN_PRESETS_KEY = "qwerty-reader:hiddenPresets";
+const IDB_FAVORITES_KEY = "qwerty-reader:favorites";
 
 interface ArticleState {
   articles: Article[];
   currentArticle: Article | null;
   hiddenPresetIds: Set<string>;
+  favoriteIds: Set<string>;
   managerOpen: boolean;
   syncing: boolean;
   setCurrentArticle: (article: Article) => void;
@@ -19,8 +21,11 @@ interface ArticleState {
   restorePresets: () => void;
   openManager: () => void;
   closeManager: () => void;
+  toggleFavorite: (articleId: string) => void;
+  updateArticleDifficulty: (articleId: string, level: DifficultyLevel | undefined) => void;
   loadFromStorage: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
+  syncFavorites: () => Promise<void>;
 }
 
 function visiblePresets(hidden: ReadonlySet<string>): Article[] {
@@ -72,6 +77,7 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
   articles: initialArticles,
   currentArticle: initialCurrent,
   hiddenPresetIds: new Set<string>(),
+  favoriteIds: new Set<string>(),
   managerOpen: false,
   syncing: false,
 
@@ -133,13 +139,42 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
     set({ managerOpen: false });
   },
 
+  toggleFavorite(articleId) {
+    const { favoriteIds } = get();
+    const next = new Set(favoriteIds);
+    const adding = !next.has(articleId);
+    if (adding) next.add(articleId);
+    else next.delete(articleId);
+    set({ favoriteIds: next });
+    void idbSet(IDB_FAVORITES_KEY, Array.from(next));
+    void import("../lib/sync.ts").then(({ addFavorite, removeFavorite }) =>
+      adding ? addFavorite(articleId) : removeFavorite(articleId),
+    );
+  },
+
+  updateArticleDifficulty(articleId, level) {
+    set((state) => {
+      const articles = state.articles.map((a) =>
+        a.id === articleId ? { ...a, difficultyOverride: level } : a,
+      );
+      persistUserArticles(articles);
+      const updated = articles.find((a) => a.id === articleId);
+      if (updated && !isPresetArticle(articleId)) {
+        void import("../lib/sync.ts").then(({ uploadArticle }) => uploadArticle(updated));
+      }
+      return { articles };
+    });
+  },
+
   async loadFromStorage() {
-    const [stored, currentId, hiddenArr] = await Promise.all([
+    const [stored, currentId, hiddenArr, favArr] = await Promise.all([
       idbGet<Article[]>(IDB_KEY),
       idbGet<string>(IDB_CURRENT_KEY),
       idbGet<string[]>(IDB_HIDDEN_PRESETS_KEY),
+      idbGet<string[]>(IDB_FAVORITES_KEY),
     ]);
     const hiddenPresetIds = new Set(hiddenArr ?? []);
+    const favoriteIds = new Set(favArr ?? []);
     const normalized = normalizeUserArticleIds(stored ?? [], currentId);
     const userArticles = normalized.articles;
     const articles = [...visiblePresets(hiddenPresetIds), ...userArticles];
@@ -152,7 +187,7 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
       persistUserArticles(articles);
       if (currentArticle) void idbSet(IDB_CURRENT_KEY, currentArticle.id);
     }
-    set({ articles, currentArticle, hiddenPresetIds });
+    set({ articles, currentArticle, hiddenPresetIds, favoriteIds });
   },
 
   async syncFromCloud() {
@@ -178,6 +213,18 @@ export const useArticleStore = create<ArticleState>((set, get) => ({
     } catch (err) {
       console.error("syncFromCloud failed", err);
       set({ syncing: false });
+    }
+  },
+
+  async syncFavorites() {
+    try {
+      const { fetchFavorites } = await import("../lib/sync.ts");
+      const ids = await fetchFavorites();
+      const favoriteIds = new Set(ids);
+      set({ favoriteIds });
+      void idbSet(IDB_FAVORITES_KEY, ids);
+    } catch (err) {
+      console.error("syncFavorites failed", err);
     }
   },
 }));

@@ -33,6 +33,7 @@ export function App() {
   const closeManager = useArticleStore((s) => s.closeManager);
   const loadFromStorage = useArticleStore((s) => s.loadFromStorage);
   const syncFromCloud = useArticleStore((s) => s.syncFromCloud);
+  const syncFavorites = useArticleStore((s) => s.syncFavorites);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
   const closeSettings = useSettingsStore((s) => s.closeSettings);
   const isFinished = useTypingStore((s) => s.isFinished);
@@ -59,8 +60,9 @@ export function App() {
     void (async () => {
       await loadFromStorage();
       await syncFromCloud();
+      await syncFavorites();
     })();
-  }, [authed, loadFromStorage, syncFromCloud]);
+  }, [authed, loadFromStorage, syncFromCloud, syncFavorites]);
 
   useEffect(() => {
     if (!currentArticle) {

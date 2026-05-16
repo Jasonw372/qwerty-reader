@@ -33,7 +33,14 @@ export function currentUserIsAdmin(): boolean {
 function mapArticle(
   row: Pick<
     DbArticleRow,
-    "id" | "title" | "content" | "source" | "is_public" | "review_status" | "tags"
+    | "id"
+    | "title"
+    | "content"
+    | "source"
+    | "is_public"
+    | "review_status"
+    | "tags"
+    | "difficulty_override"
   >,
 ): Article {
   return {
@@ -44,6 +51,7 @@ function mapArticle(
     tags: row.tags ?? undefined,
     isPublic: row.is_public,
     reviewStatus: row.review_status,
+    difficultyOverride: (row.difficulty_override as Article["difficultyOverride"]) ?? undefined,
   };
 }
 
@@ -63,6 +71,7 @@ export async function uploadArticle(article: Article): Promise<{ error?: string 
     is_public: article.reviewStatus === "approved",
     review_status: article.reviewStatus ?? "private",
     tags: article.tags ?? null,
+    difficulty_override: article.difficultyOverride ?? null,
     submitted_at: article.reviewStatus === "pending" ? now : null,
     reviewed_at: null,
     reviewed_by: null,
@@ -82,7 +91,7 @@ export async function fetchArticles(): Promise<Article[]> {
   if (!userId) return [];
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status, tags")
+    .select("id, title, content, source, is_public, review_status, tags, difficulty_override")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -118,7 +127,9 @@ export async function fetchPublicArticles({
 
   let query = supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status, tags", { count: "exact" })
+    .select("id, title, content, source, is_public, review_status, tags, difficulty_override", {
+      count: "exact",
+    })
     .eq("is_public", true)
     .eq("review_status", "approved")
     .order("updated_at", { ascending: false })
@@ -145,7 +156,7 @@ export async function fetchPendingPublicArticles(): Promise<Article[]> {
   if (!currentUserIsAdmin()) return [];
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, content, source, is_public, review_status, tags")
+    .select("id, title, content, source, is_public, review_status, tags, difficulty_override")
     .eq("review_status", "pending")
     .order("submitted_at", { ascending: true });
 
@@ -267,4 +278,37 @@ export async function fetchTypingSessions(limit = 50): Promise<TypingSession[]> 
     errorHeatmap: parseErrorHeatmap(row.error_heatmap),
     createdAt: row.created_at,
   }));
+}
+
+export async function fetchFavorites(): Promise<string[]> {
+  const userId = currentUserId();
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("article_id")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: { article_id: string }) => row.article_id);
+}
+
+export async function addFavorite(articleId: string): Promise<{ error?: string }> {
+  const userId = currentUserId();
+  if (!userId) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("favorites") as any).upsert(
+    { user_id: userId, article_id: articleId },
+    { onConflict: "user_id,article_id" },
+  );
+  return { error: error?.message };
+}
+
+export async function removeFavorite(articleId: string): Promise<{ error?: string }> {
+  const userId = currentUserId();
+  if (!userId) return {};
+  const { error } = await supabase
+    .from("favorites")
+    .delete()
+    .eq("user_id", userId)
+    .eq("article_id", articleId);
+  return { error: error?.message };
 }

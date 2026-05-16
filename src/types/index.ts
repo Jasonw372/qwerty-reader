@@ -21,6 +21,8 @@ export interface ParagraphData {
   focus: ParagraphFocus;
 }
 
+export type DifficultyLevel = "easy" | "medium" | "hard";
+
 export interface Article {
   id: string;
   title: string;
@@ -29,6 +31,7 @@ export interface Article {
   tags?: string[];
   isPublic?: boolean;
   reviewStatus?: ArticleReviewStatus;
+  difficultyOverride?: DifficultyLevel;
 }
 
 export type ArticleReviewStatus = "private" | "pending" | "approved" | "rejected";

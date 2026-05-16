@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useArticleStore } from "../../store/articleStore.ts";
-import type { Article } from "../../types/index.ts";
+import type { Article, DifficultyLevel } from "../../types/index.ts";
 import { useTranslation } from "react-i18next";
 import { currentUserIsAdmin, deletePublicArticle, fetchPublicArticles } from "../../lib/sync.ts";
 import { ArticleContentEditor } from "./ArticleContentEditor.tsx";
 import { ArticlePreviewModal } from "./ArticlePreviewModal.tsx";
 import { TagFilter } from "./TagFilter.tsx";
+import { calculateDifficulty } from "../../lib/difficulty.ts";
 
 type Tab = "list" | "public" | "create";
 
@@ -38,6 +39,9 @@ export function ArticleManager() {
   const restorePresets = useArticleStore((s) => s.restorePresets);
   const hiddenPresetCount = useArticleStore((s) => s.hiddenPresetIds.size);
   const closeManager = useArticleStore((s) => s.closeManager);
+  const favoriteIds = useArticleStore((s) => s.favoriteIds);
+  const toggleFavorite = useArticleStore((s) => s.toggleFavorite);
+  const updateArticleDifficulty = useArticleStore((s) => s.updateArticleDifficulty);
 
   const [tab, setTab] = useState<Tab>("list");
   const [draftTitle, setDraftTitle] = useState("");
@@ -59,6 +63,7 @@ export function ArticleManager() {
   const [localTagFilter, setLocalTagFilter] = useState<string[]>([]);
   const [publicTagFilter, setPublicTagFilter] = useState<string[]>([]);
   const [draftTags, setDraftTags] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const isAdmin = currentUserIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -177,9 +182,13 @@ export function ArticleManager() {
   }
 
   const filteredLocalArticles = useMemo(() => {
-    if (localTagFilter.length === 0) return articles;
-    return articles.filter((a) => a.tags && a.tags.some((tag) => localTagFilter.includes(tag)));
-  }, [articles, localTagFilter]);
+    let result = articles;
+    if (showFavoritesOnly) {
+      result = result.filter((a) => favoriteIds.has(a.id));
+    }
+    if (localTagFilter.length === 0) return result;
+    return result.filter((a) => a.tags && a.tags.some((tag) => localTagFilter.includes(tag)));
+  }, [articles, localTagFilter, showFavoritesOnly, favoriteIds]);
 
   const localTotalPages = Math.max(1, Math.ceil(filteredLocalArticles.length / LOCAL_PAGE_SIZE));
   const localPageArticles = useMemo(() => {
@@ -230,10 +239,24 @@ export function ArticleManager() {
 
         {tab !== "create" && (
           <div className="border-b border-[var(--theme-border)] px-6 pb-3">
-            <TagFilter
-              selected={tab === "list" ? localTagFilter : publicTagFilter}
-              onChange={tab === "list" ? setLocalTagFilter : setPublicTagFilter}
-            />
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setShowFavoritesOnly((v) => !v)}
+                className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] cursor-pointer transition-colors ${
+                  showFavoritesOnly
+                    ? "border-[var(--theme-border-strong)] bg-[var(--theme-accent-soft)] text-[var(--theme-text-correct)] font-medium"
+                    : "border-transparent text-[var(--theme-text-muted)] hover:text-[var(--theme-text-pending)] hover:border-[var(--theme-border)]"
+                }`}
+              >
+                ★ {t("articleManager.favorites")}
+              </button>
+              <div className="h-3 w-px shrink-0 bg-[var(--theme-border)]" />
+              <TagFilter
+                selected={tab === "list" ? localTagFilter : publicTagFilter}
+                onChange={tab === "list" ? setLocalTagFilter : setPublicTagFilter}
+              />
+            </div>
           </div>
         )}
 
@@ -246,8 +269,21 @@ export function ArticleManager() {
                     key={a.id}
                     article={a}
                     active={a.id === currentArticle?.id}
+                    isFavorited={favoriteIds.has(a.id)}
                     onSelect={() => handleSelect(a)}
                     onRemove={(e) => handleRemove(e, a.id)}
+                    onToggleFavorite={() => toggleFavorite(a.id)}
+                    onCycleDifficulty={() => {
+                      const levels: (DifficultyLevel | undefined)[] = [
+                        "easy",
+                        "medium",
+                        "hard",
+                        undefined,
+                      ];
+                      const current = a.difficultyOverride;
+                      const idx = levels.indexOf(current);
+                      updateArticleDifficulty(a.id, levels[(idx + 1) % levels.length]);
+                    }}
                   />
                 ))}
               </ul>
@@ -309,8 +345,10 @@ export function ArticleManager() {
                       primaryActionLabel={t("articleManager.useArticle")}
                       deleteActionLabel={isAdmin ? t("articleManager.delete") : undefined}
                       busy={deletingPublicId === article.id}
+                      isFavorited={favoriteIds.has(article.id)}
                       onPrimary={() => handleSelect(article)}
                       onPreview={() => setPreviewArticle(article)}
+                      onToggleFavorite={() => toggleFavorite(article.id)}
                       onDelete={
                         isAdmin ? () => void handleDeletePublicArticle(article.id) : undefined
                       }
@@ -500,15 +538,22 @@ function PaginationControls({
 function LocalArticleItem({
   article,
   active,
+  isFavorited,
   onSelect,
   onRemove,
+  onToggleFavorite,
+  onCycleDifficulty,
 }: {
   article: Article;
   active: boolean;
+  isFavorited: boolean;
   onSelect: () => void;
   onRemove: (event: React.MouseEvent) => void;
+  onToggleFavorite: () => void;
+  onCycleDifficulty: () => void;
 }) {
   const { t } = useTranslation();
+  const difficulty = article.difficultyOverride ?? calculateDifficulty(article.content);
 
   return (
     <li
@@ -529,31 +574,32 @@ function LocalArticleItem({
         </div>
         <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--theme-text-muted)]">
           {article.source && <span className="truncate">{article.source}</span>}
+          <DifficultyBadge level={difficulty} onClick={onCycleDifficulty} />
           {article.reviewStatus === "pending" && (
             <span className="shrink-0 text-[var(--theme-accent)]">
               {t("articleManager.pendingReview")}
             </span>
           )}
         </div>
-        {article.tags && article.tags.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
-            {article.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-[var(--theme-border)] px-1.5 py-0.5 text-[10px] text-[var(--theme-text-muted)]"
-              >
-                {t(`tags.${tag}`)}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
-      <button
-        onClick={onRemove}
-        className="soft-button shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
-      >
-        {t("articleManager.delete")}
-      </button>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          className="cursor-pointer px-1 text-sm transition-colors"
+          style={{ color: isFavorited ? "var(--theme-accent)" : "var(--theme-text-muted)" }}
+        >
+          {isFavorited ? "★" : "☆"}
+        </button>
+        <button
+          onClick={onRemove}
+          className="soft-button shrink-0 rounded-lg px-2.5 py-1 text-xs cursor-pointer"
+        >
+          {t("articleManager.delete")}
+        </button>
+      </div>
     </li>
   );
 }
@@ -563,47 +609,49 @@ function PublicArticleItem({
   primaryActionLabel,
   deleteActionLabel,
   busy = false,
+  isFavorited,
   onPrimary,
   onPreview,
   onDelete,
+  onToggleFavorite,
 }: {
   article: Article;
   primaryActionLabel: string;
   deleteActionLabel?: string;
   busy?: boolean;
+  isFavorited: boolean;
   onPrimary: () => void;
   onPreview: () => void;
   onDelete?: () => void;
+  onToggleFavorite: () => void;
 }) {
   const { t } = useTranslation();
   const charCount = article.content.trim().length;
+  const difficulty = article.difficultyOverride ?? calculateDifficulty(article.content);
 
   return (
     <li className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-[var(--theme-border)] px-3 py-2">
       <button type="button" onClick={onPreview} className="min-w-0 flex-1 text-left">
         <div className="truncate text-sm text-[var(--theme-text-correct)]">{article.title}</div>
-        <div className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">
-          {article.content}
-        </div>
         <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--theme-text-muted)]">
           <span className="uppercase tracking-[0.12em]">
             {t("articlePreview.chars", { count: charCount })}
           </span>
-          {article.tags && article.tags.length > 0 && (
-            <span className="flex gap-1">
-              {article.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-[var(--theme-border)] px-1.5 py-0.5"
-                >
-                  {t(`tags.${tag}`)}
-                </span>
-              ))}
-            </span>
-          )}
+          <DifficultyBadge level={difficulty} />
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          className="cursor-pointer px-1 text-sm transition-colors"
+          style={{ color: isFavorited ? "var(--theme-accent)" : "var(--theme-text-muted)" }}
+        >
+          {isFavorited ? "★" : "☆"}
+        </button>
         <button
           type="button"
           onClick={onPreview}
@@ -631,4 +679,46 @@ function PublicArticleItem({
       </div>
     </li>
   );
+}
+
+const DIFFICULTY_COLORS: Record<DifficultyLevel, string> = {
+  easy: "var(--theme-text-correct)",
+  medium: "var(--theme-accent)",
+  hard: "var(--theme-text-error)",
+};
+
+function DifficultyBadge({ level, onClick }: { level: DifficultyLevel; onClick?: () => void }) {
+  const { t } = useTranslation();
+  const label =
+    level === "easy"
+      ? t("articleManager.difficultyEasy")
+      : level === "medium"
+        ? t("articleManager.difficultyMedium")
+        : t("articleManager.difficultyHard");
+  const color = DIFFICULTY_COLORS[level];
+
+  const inner = (
+    <span
+      className="rounded-full px-1.5 py-0.5 text-[10px]"
+      style={{ color, border: `1px solid color-mix(in srgb, ${color} 35%, transparent)` }}
+    >
+      {label}
+    </span>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="cursor-pointer"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return inner;
 }

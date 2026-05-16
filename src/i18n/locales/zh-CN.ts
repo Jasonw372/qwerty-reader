@@ -92,6 +92,10 @@ const zhCN = {
     deletePublicConfirm: "确认从公共文章库删除这篇文章吗？此操作不可撤销。",
     englishOnlyHint:
       "请提交纯英文文章。正文会在提交前检查，中文、日文、Emoji 或其他非英文字符不会被保存。",
+    favorites: "收藏",
+    difficultyEasy: "简单",
+    difficultyMedium: "中等",
+    difficultyHard: "困难",
   },
   review: {
     title: "文章审核",

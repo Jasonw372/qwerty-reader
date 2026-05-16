@@ -40,6 +40,7 @@ export interface Database {
           is_public: boolean;
           review_status: "private" | "pending" | "approved" | "rejected";
           tags: string[] | null;
+          difficulty_override: string | null;
           submitted_at: string | null;
           reviewed_at: string | null;
           reviewed_by: string | null;
@@ -57,6 +58,7 @@ export interface Database {
           is_public?: boolean;
           review_status?: "private" | "pending" | "approved" | "rejected";
           tags?: string[] | null;
+          difficulty_override?: string | null;
           submitted_at?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
@@ -74,6 +76,7 @@ export interface Database {
           is_public?: boolean;
           review_status?: "private" | "pending" | "approved" | "rejected";
           tags?: string[] | null;
+          difficulty_override?: string | null;
           submitted_at?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
@@ -147,6 +150,26 @@ export interface Database {
           phonetic?: string | null;
           meanings?: Json | null;
           fetched_at?: string;
+        };
+      };
+      favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          article_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          article_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          article_id?: string;
+          created_at?: string;
         };
       };
     };

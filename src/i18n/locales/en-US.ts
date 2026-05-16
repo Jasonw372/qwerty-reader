@@ -94,6 +94,10 @@ const enUS = {
       "Delete this article from the public library? This action cannot be undone.",
     englishOnlyHint:
       "Please submit English-only articles. Content is checked before submission; Chinese, Japanese, emoji, and other non-English characters will not be saved.",
+    favorites: "Favorites",
+    difficultyEasy: "Easy",
+    difficultyMedium: "Medium",
+    difficultyHard: "Hard",
   },
   review: {
     title: "Article Review",
