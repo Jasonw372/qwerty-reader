@@ -25,13 +25,13 @@ export const CharSpan = memo(function CharSpan({ char, status }: CharSpanProps) 
         status === "correct" && "text-[var(--theme-text-correct)]",
         status === "incorrect" &&
           "rounded-[2px] bg-[var(--theme-text-error-bg)] text-[var(--theme-text-error)]",
-        isSpace && "min-w-[1ch] text-center",
-        isSpace && showSpaceSymbol && "space-symbol text-[0.52em] align-[0.08em] opacity-48",
+        isSpace && "w-[1ch] text-center",
+        isSpace && showSpaceSymbol && "opacity-48",
         className,
       )}
       data-status={status}
     >
-      {isSpace ? (showSpaceSymbol ? "_" : " ") : char}
+      {isSpace ? (showSpaceSymbol ? "·" : " ") : char}
     </span>
   );
 });
