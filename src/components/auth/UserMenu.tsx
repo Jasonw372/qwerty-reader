@@ -14,43 +14,51 @@ export function UserMenu() {
 
   const avatar = user.user_metadata?.avatar_url;
   const displayName = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "User";
+  const initial = displayName[0]?.toUpperCase() ?? "U";
 
   return (
     <div className="relative">
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-neutral-700 transition-colors"
+        className="icon-button flex items-center gap-1.5 rounded-lg px-1.5 py-1 cursor-pointer"
         title={syncing ? t("auth.syncing") : t("auth.syncEnabled")}
+        aria-label={displayName}
       >
         {avatar ? (
-          <img src={avatar} alt="" className="w-6 h-6 rounded-full" />
+          <img src={avatar} alt="" className="size-6 rounded-full" />
         ) : (
-          <div className="w-6 h-6 rounded-full bg-amber-300 dark:bg-amber-600 flex items-center justify-center text-xs font-medium">
-            {displayName[0].toUpperCase()}
+          <div
+            className="grid size-6 place-items-center rounded-full text-[11px] font-medium"
+            style={{
+              background: "var(--theme-accent-soft)",
+              color: "var(--theme-accent)",
+            }}
+          >
+            {initial}
           </div>
         )}
         {syncing ? (
-          <Loader2 size={14} className="animate-spin text-amber-500" />
+          <Loader2 size={14} className="animate-spin text-[var(--theme-cursor)]" />
         ) : (
-          <Cloud size={14} className="text-emerald-500" />
+          <Cloud size={14} className="text-[var(--theme-text-correct)]" />
         )}
       </button>
 
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-amber-200 dark:border-neutral-700 py-1">
-            <div className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 border-b border-amber-100 dark:border-neutral-700">
-              <div>{displayName}</div>
-              <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+          <div className="glass-panel absolute right-0 top-full z-50 mt-2 w-52 rounded-xl py-1 font-mono">
+            <div className="border-b border-[var(--theme-border)] px-3 py-2 text-sm text-[var(--theme-text-pending)]">
+              <div className="truncate text-[var(--theme-text-correct)]">{displayName}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--theme-text-muted)]">
                 {syncing ? (
                   <>
-                    <Loader2 size={10} className="animate-spin text-amber-500" />
+                    <Loader2 size={10} className="animate-spin text-[var(--theme-cursor)]" />
                     <span>{t("auth.syncing")}</span>
                   </>
                 ) : (
                   <>
-                    <Cloud size={10} className="text-emerald-500" />
+                    <Cloud size={10} className="text-[var(--theme-text-correct)]" />
                     <span>{t("auth.syncEnabled")}</span>
                   </>
                 )}
@@ -61,7 +69,7 @@ export function UserMenu() {
                 void signOut();
                 setMenuOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-amber-50 dark:hover:bg-neutral-700"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--theme-text-pending)] transition-colors hover:bg-[color-mix(in_srgb,var(--theme-accent-soft)_60%,transparent)] hover:text-[var(--theme-text-correct)]"
             >
               <LogOut size={14} />
               {t("auth.signOut")}

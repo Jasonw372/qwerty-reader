@@ -59,8 +59,8 @@ export function ReadingPreview({
   }
 
   return (
-    <article className="animate-float-in mx-auto w-full max-w-5xl px-5 pb-24 pt-12 text-[var(--theme-text-correct)] md:px-8 md:pt-16">
-      <header className="glass-panel sticky top-[4.75rem] z-[1] mb-10 rounded-2xl px-5 py-5 md:px-7">
+    <article className="animate-float-in mx-auto w-full max-w-5xl px-5 pb-24 pt-28 text-[var(--theme-text-correct)] md:px-8 md:pt-32">
+      <header className="glass-panel mb-10 rounded-2xl px-5 py-5 md:px-7">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--theme-accent)]">

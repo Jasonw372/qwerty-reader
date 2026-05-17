@@ -2,7 +2,7 @@ import { useTypingStore } from "../../store/typingStore.ts";
 import { useArticleStore } from "../../store/articleStore.ts";
 import { useSettingsStore } from "../../store/settingsStore.ts";
 import { formatTime } from "../../lib/textParser.ts";
-import { BarChart3, ClipboardCheck, Settings } from "lucide-react";
+import { BarChart3, ClipboardCheck, Eye, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserMenu } from "../auth/UserMenu.tsx";
 
@@ -32,97 +32,130 @@ export function HUD({ onOpenReading, onOpenHistory, onOpenReview }: HUDProps) {
       : 0;
 
   return (
-    <header
-      className="fixed inset-x-0 top-0 z-40 border-b border-[var(--theme-border)] px-4 py-3 font-mono backdrop-blur-xl md:px-8"
-      style={{ backgroundColor: "var(--theme-hud-bg)" }}
-    >
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex min-w-0 items-center gap-3 text-[var(--theme-text-pending)]">
+    <header className="hud-shell font-mono">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-6 md:px-8">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:max-w-[26rem]">
           <button
             onClick={openManager}
             title={t("hud.manageArticles")}
-            className="soft-button min-w-0 max-w-[min(22rem,62vw)] truncate rounded-lg px-3 py-2 text-left text-xs cursor-pointer"
+            className="hud-prompt-button cursor-pointer"
           >
-            <span className="mr-2 text-[var(--theme-accent)]">▸</span>
-            <span className="text-[var(--theme-text-correct)]">
+            <span className="hud-prompt-caret">▸</span>
+            <span className="hud-prompt-title truncate text-sm">
               {article?.title ?? t("hud.noArticle")}
             </span>
           </button>
-          <div className="hidden h-8 w-px bg-[var(--theme-border)] md:block" />
-          <div className="flex min-w-28 flex-col gap-1">
-            <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-[var(--theme-text-muted)]">
-              <span>{t("hud.progress")}</span>
-              <span className="tracking-normal text-[var(--theme-text-pending)]">{progress}%</span>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[var(--theme-text-muted)]">
+            <div className="hud-progress-track flex-1">
+              <div className="hud-progress-fill" style={{ width: `${progress}%` }} />
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--theme-border)]">
-              <div
-                className="h-full rounded-full bg-[var(--theme-cursor)] transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+            <span className="tabular-nums text-[var(--theme-text-pending)]">{progress}%</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[var(--theme-text-pending)] md:justify-end">
-          <Stat label="WPM" value={wpm} />
-          <Stat label="ACC" value={`${accuracy}%`} />
-          <Stat label="TIME" value={formatTime(elapsed)} />
+        <div className="hud-divider-vert hidden md:block" />
 
-          {onOpenReading && (
-            <button
-              onClick={onOpenReading}
-              title={t("hud.readingPreview")}
-              className="soft-button rounded-lg px-3 py-2 text-xs cursor-pointer"
-            >
-              {t("hud.reading")}
-            </button>
-          )}
+        <div className="flex items-center justify-between gap-3 md:flex-1 md:justify-start md:gap-4">
+          <div className="hud-stat-group">
+            <div className={`hud-stat hud-stat-primary ${isFinished ? "is-finished" : ""}`}>
+              <span className="hud-stat-label">WPM</span>
+              <span className={`hud-stat-value ${isFinished ? "animate-pop-in" : ""}`}>{wpm}</span>
+            </div>
+            <div className="hud-stat">
+              <span className="hud-stat-label">ACC</span>
+              <span className="hud-stat-value">{accuracy}%</span>
+            </div>
+            <div className="hud-stat">
+              <span className="hud-stat-label">TIME</span>
+              <span className="hud-stat-value">{formatTime(elapsed)}</span>
+            </div>
+          </div>
 
-          <UserMenu />
+          <div className="flex items-center gap-1.5 md:hidden">
+            <ToolButtons
+              onOpenReading={onOpenReading}
+              onOpenHistory={onOpenHistory}
+              onOpenReview={onOpenReview}
+              onOpenSettings={openSettings}
+            />
+          </div>
+        </div>
 
-          {onOpenHistory && (
-            <button
-              onClick={onOpenHistory}
-              title={t("hud.history")}
-              className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
-              aria-label={t("hud.historyAria")}
-            >
-              <BarChart3 size={20} />
-            </button>
-          )}
+        <div className="hud-divider-vert hidden md:block" />
 
-          {onOpenReview && (
-            <button
-              onClick={onOpenReview}
-              title={t("hud.review")}
-              className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
-              aria-label={t("hud.reviewAria")}
-            >
-              <ClipboardCheck size={20} />
-            </button>
-          )}
-
-          <button
-            onClick={openSettings}
-            title={t("hud.settings")}
-            className="icon-button grid size-10 place-items-center rounded-lg cursor-pointer"
-            aria-label={t("hud.settingsAria")}
-          >
-            <Settings size={20} />
-          </button>
+        <div className="hidden items-center gap-1.5 md:flex">
+          <ToolButtons
+            onOpenReading={onOpenReading}
+            onOpenHistory={onOpenHistory}
+            onOpenReview={onOpenReview}
+            onOpenSettings={openSettings}
+          />
         </div>
       </div>
     </header>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+interface ToolButtonsProps {
+  onOpenReading?: () => void;
+  onOpenHistory?: () => void;
+  onOpenReview?: () => void;
+  onOpenSettings: () => void;
+}
+
+function ToolButtons({
+  onOpenReading,
+  onOpenHistory,
+  onOpenReview,
+  onOpenSettings,
+}: ToolButtonsProps) {
+  const { t } = useTranslation();
+
   return (
-    <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface-elevated)] px-3 py-1.5 shadow-sm">
-      <span className="mr-2 text-[10px] uppercase tracking-[0.16em] text-[var(--theme-text-muted)]">
-        {label}
-      </span>
-      <span className="text-sm font-medium text-[var(--theme-text-correct)]">{value}</span>
-    </div>
+    <>
+      {onOpenReading && (
+        <button
+          onClick={onOpenReading}
+          title={t("hud.readingPreview")}
+          aria-label={t("hud.readingPreview")}
+          className="icon-button grid size-9 place-items-center rounded-lg cursor-pointer"
+        >
+          <Eye size={18} />
+        </button>
+      )}
+
+      <UserMenu />
+
+      {onOpenHistory && (
+        <button
+          onClick={onOpenHistory}
+          title={t("hud.history")}
+          className="icon-button grid size-9 place-items-center rounded-lg cursor-pointer"
+          aria-label={t("hud.historyAria")}
+        >
+          <BarChart3 size={18} />
+        </button>
+      )}
+
+      {onOpenReview && (
+        <button
+          onClick={onOpenReview}
+          title={t("hud.review")}
+          className="icon-button grid size-9 place-items-center rounded-lg cursor-pointer"
+          aria-label={t("hud.reviewAria")}
+        >
+          <ClipboardCheck size={18} />
+        </button>
+      )}
+
+      <button
+        onClick={onOpenSettings}
+        title={t("hud.settings")}
+        className="icon-button grid size-9 place-items-center rounded-lg cursor-pointer"
+        aria-label={t("hud.settingsAria")}
+      >
+        <Settings size={18} />
+      </button>
+    </>
   );
 }
